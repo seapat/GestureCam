@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="Gradle: com.google.mediapipe:solution-core:0.8.10.1-alpha-1@aar">
+    <CLASSES>
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-3/2be7f6f1e1315e4d287214853f39f0dc/transformed/solution-core-0.8.10.1-alpha-1/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-3/ed194c74d3ea0eff09c219b91ec7d6af/transformed/solution-core-0.8.10.1-alpha-1/AndroidManifest.xml" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-3/ed194c74d3ea0eff09c219b91ec7d6af/transformed/solution-core-0.8.10.1-alpha-1/res" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-3/ed194c74d3ea0eff09c219b91ec7d6af/transformed/solution-core-0.8.10.1-alpha-1/jars/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

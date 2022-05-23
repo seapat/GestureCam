@@ -24,7 +24,6 @@ import android.opengl.GLES20;
 import android.util.Pair;
 
 import androidx.appcompat.widget.AppCompatImageView;
-import com.google.mediapipe.formats.proto.LandmarkProto;
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmark;
 import com.google.mediapipe.solutions.hands.Hands;
 import com.google.mediapipe.solutions.hands.HandsResult;
@@ -39,15 +38,9 @@ import java.util.List;
 public class HandsResultImageView extends AppCompatImageView {
   private static final String TAG = "HandsResultImageView";
 
-  private static final int LEFT_HAND_CONNECTION_COLOR = Color.parseColor("#30FF30");
-  private static final int RIGHT_HAND_CONNECTION_COLOR = Color.parseColor("#FF3030");
-  private static final int CONNECTION_THICKNESS = 8; // Pixels
-  private static final int LEFT_HAND_HOLLOW_CIRCLE_COLOR = Color.parseColor("#30FF30");
-  private static final int RIGHT_HAND_HOLLOW_CIRCLE_COLOR = Color.parseColor("#FF3030");
-  private static final int HOLLOW_CIRCLE_WIDTH = 5; // Pixels
-  private static final int LEFT_HAND_LANDMARK_COLOR = Color.parseColor("#FF3030");
-  private static final int RIGHT_HAND_LANDMARK_COLOR = Color.parseColor("#30FF30");
-  private static final int LANDMARK_RADIUS = 10; // Pixels
+  private static final int LEFT_HAND_CONNECTION_COLOR = Color.parseColor("#c1c1c1");
+  private static final int RIGHT_HAND_CONNECTION_COLOR = Color.parseColor("#c1c1c1");
+  private static final int CONNECTION_THICKNESS = 1; // Pixels
   private Bitmap latest;
 
   public HandsResultImageView(Context context) {
@@ -130,7 +123,7 @@ public class HandsResultImageView extends AppCompatImageView {
 
     List<Pair<Float,Float>> squareVertex=getSquareVertex(handLandmarkList);
     // Draw connections.
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < squareVertex.size(); i++) {
       Paint connectionPaint = new Paint();
       connectionPaint.setColor(
               isLeftHand ? LEFT_HAND_CONNECTION_COLOR : RIGHT_HAND_CONNECTION_COLOR);
@@ -144,24 +137,5 @@ public class HandsResultImageView extends AppCompatImageView {
               end.second * height,
               connectionPaint);
     }
-    /*Paint landmarkPaint = new Paint();
-    landmarkPaint.setColor(isLeftHand ? LEFT_HAND_LANDMARK_COLOR : RIGHT_HAND_LANDMARK_COLOR);
-    // Draws landmarks.
-    for (LandmarkProto.NormalizedLandmark landmark : handLandmarkList) {
-      canvas.drawCircle(
-          landmark.getX() * width, landmark.getY() * height, LANDMARK_RADIUS, landmarkPaint);
-    }
-    // Draws hollow circles around landmarks.
-    landmarkPaint.setColor(
-        isLeftHand ? LEFT_HAND_HOLLOW_CIRCLE_COLOR : RIGHT_HAND_HOLLOW_CIRCLE_COLOR);
-    landmarkPaint.setStrokeWidth(HOLLOW_CIRCLE_WIDTH);
-    landmarkPaint.setStyle(Paint.Style.STROKE);
-    for (LandmarkProto.NormalizedLandmark landmark : handLandmarkList) {
-      canvas.drawCircle(
-          landmark.getX() * width,
-          landmark.getY() * height,
-          LANDMARK_RADIUS + HOLLOW_CIRCLE_WIDTH,
-          landmarkPaint);
-    }*/
   }
 }

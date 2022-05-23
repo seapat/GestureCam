@@ -14,6 +14,7 @@
 
 package com.google.mediapipe.examples.hands;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
@@ -162,7 +163,11 @@ public class MainActivity extends AppCompatActivity {
           runOnUiThread(() -> {
             String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
 
-            recognizedGesture.setText(gestureString); //FIXME: This text is not shown on screen correctly
+            recognizedGesture.setText(gestureString);
+            recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
+            recognizedGesture.invalidate();
+            recognizedGesture.requestLayout();
+            recognizedGesture.bringToFront();
             Log.i(TAG, "Gesture recognized " + gestureString);
           });
 
@@ -324,7 +329,7 @@ public class MainActivity extends AppCompatActivity {
                 + " secondFingerIsOpen " + secondFingerIsOpen +
                 " thirdFingerIsOpen " + thirdFingerIsOpen + " fourthFingerIsOpen " + fourthFingerIsOpen;
         Log.d(TAG, "handGestureCalculator: == " + info);
-        return "___";
+        return "unrecognized gesture";
       }
     }
     return "___";

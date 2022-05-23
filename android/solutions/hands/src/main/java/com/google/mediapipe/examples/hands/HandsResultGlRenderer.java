@@ -14,7 +14,11 @@
 
 package com.google.mediapipe.examples.hands;
 
+import android.graphics.Point;
 import android.opengl.GLES20;
+import android.util.Log;
+import android.util.Pair;
+import com.google.mediapipe.formats.proto.LandmarkProto;
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmark;
 import com.google.mediapipe.solutioncore.ResultGlRenderer;
 import com.google.mediapipe.solutions.hands.Hands;
@@ -22,6 +26,7 @@ import com.google.mediapipe.solutions.hands.HandsResult;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 /** A custom implementation of {@link ResultGlRenderer} to render {@link HandsResult}. */
@@ -87,10 +92,10 @@ public class HandsResultGlRenderer implements ResultGlRenderer<HandsResult> {
     int numHands = result.multiHandLandmarks().size();
     for (int i = 0; i < numHands; ++i) {
       boolean isLeftHand = result.multiHandedness().get(i).getLabel().equals("Left");
-      drawConnections(
+      drawSquare(
           result.multiHandLandmarks().get(i).getLandmarkList(),
           isLeftHand ? LEFT_HAND_CONNECTION_COLOR : RIGHT_HAND_CONNECTION_COLOR);
-      for (NormalizedLandmark landmark : result.multiHandLandmarks().get(i).getLandmarkList()) {
+      /*for (NormalizedLandmark landmark : result.multiHandLandmarks().get(i).getLandmarkList()) {
         // Draws the landmark.
         drawCircle(
             landmark.getX(),
@@ -101,9 +106,61 @@ public class HandsResultGlRenderer implements ResultGlRenderer<HandsResult> {
             landmark.getX(),
             landmark.getY(),
             isLeftHand ? LEFT_HAND_HOLLOW_CIRCLE_COLOR : RIGHT_HAND_HOLLOW_CIRCLE_COLOR);
-      }
+      }*/
     }
   }
+
+  private List<Pair<Float,Float>> getSquareVertex(List<NormalizedLandmark> handLandmarkList){
+    float max_X = handLandmarkList.get(0).getX();
+    float min_X = handLandmarkList.get(0).getX();
+    float max_Y = handLandmarkList.get(0).getX();
+    float min_Y = handLandmarkList.get(0).getX();
+
+
+    List<Pair<Float,Float>> vertex=new ArrayList<Pair<Float,Float>>();
+
+    for (NormalizedLandmark landmark : handLandmarkList) {
+      if (max_X < landmark.getX())
+        max_X = landmark.getX();
+      if (min_X > landmark.getX())
+        min_X = landmark.getX();
+
+      if (max_Y < landmark.getY())
+        max_Y = landmark.getY();
+      if (min_Y > landmark.getY())
+        min_Y = landmark.getY();
+    }
+
+    vertex.add(new Pair<Float,Float>(min_X,min_Y));
+    vertex.add(new Pair<Float,Float>(max_X,min_Y));
+    vertex.add(new Pair<Float,Float>(max_X,max_Y));
+    vertex.add(new Pair<Float,Float>(min_X,max_Y));
+
+    return vertex;
+  }
+
+
+  private void drawSquare(List<NormalizedLandmark> handLandmarkList, float[] colorArray) {
+
+    List<Pair<Float,Float>> squareVertex=getSquareVertex(handLandmarkList);
+
+    GLES20.glUniform4fv(colorHandle, 1, colorArray, 0);
+    for (int i = 0; i < 4; i++) {
+      Pair<Float,Float> start = squareVertex.get(i);
+      Pair<Float,Float> end = squareVertex.get((i+1)%4);
+      float[] vertex = {start.first, start.second, end.first, end.second};
+      FloatBuffer vertexBuffer =
+              ByteBuffer.allocateDirect(vertex.length * 4)
+                      .order(ByteOrder.nativeOrder())
+                      .asFloatBuffer()
+                      .put(vertex);
+      vertexBuffer.position(0);
+      GLES20.glEnableVertexAttribArray(positionHandle);
+      GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
+      GLES20.glDrawArrays(GLES20.GL_LINES, 0, 2);
+    }
+  }
+
 
   /**
    * Deletes the shader program.
@@ -178,4 +235,7 @@ public class HandsResultGlRenderer implements ResultGlRenderer<HandsResult> {
     GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer);
     GLES20.glDrawArrays(GLES20.GL_LINE_STRIP, 0, vertexCount);
   }
+
+
+
 }

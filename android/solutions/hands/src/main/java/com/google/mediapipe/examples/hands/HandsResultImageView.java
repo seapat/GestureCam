@@ -20,11 +20,19 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.opengl.GLES20;
+import android.util.Pair;
+
 import androidx.appcompat.widget.AppCompatImageView;
 import com.google.mediapipe.formats.proto.LandmarkProto;
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmark;
 import com.google.mediapipe.solutions.hands.Hands;
 import com.google.mediapipe.solutions.hands.HandsResult;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 /** An ImageView implementation for displaying {@link HandsResult}. */
@@ -83,28 +91,60 @@ public class HandsResultImageView extends AppCompatImageView {
     }
   }
 
+  private List<Pair<Float,Float>> getSquareVertex(List<NormalizedLandmark> handLandmarkList){
+    float max_X = handLandmarkList.get(0).getX();
+    float min_X = handLandmarkList.get(0).getX();
+    float max_Y = handLandmarkList.get(0).getX();
+    float min_Y = handLandmarkList.get(0).getX();
+
+
+    List<Pair<Float,Float>> vertex=new ArrayList<Pair<Float,Float>>();
+
+    for (NormalizedLandmark landmark : handLandmarkList) {
+      if (max_X < landmark.getX())
+        max_X = landmark.getX();
+      if (min_X > landmark.getX())
+        min_X = landmark.getX();
+
+      if (max_Y < landmark.getY())
+        max_Y = landmark.getY();
+      if (min_Y > landmark.getY())
+        min_Y = landmark.getY();
+    }
+
+    vertex.add(new Pair<Float,Float>(min_X,min_Y));
+    vertex.add(new Pair<Float,Float>(max_X,min_Y));
+    vertex.add(new Pair<Float,Float>(max_X,max_Y));
+    vertex.add(new Pair<Float,Float>(min_X,max_Y));
+
+    return vertex;
+  }
+
+
   private void drawLandmarksOnCanvas(
       List<NormalizedLandmark> handLandmarkList,
       boolean isLeftHand,
       Canvas canvas,
       int width,
       int height) {
+
+    List<Pair<Float,Float>> squareVertex=getSquareVertex(handLandmarkList);
     // Draw connections.
-    for (Hands.Connection c : Hands.HAND_CONNECTIONS) {
+    for (int i = 0; i < 4; i++) {
       Paint connectionPaint = new Paint();
       connectionPaint.setColor(
-          isLeftHand ? LEFT_HAND_CONNECTION_COLOR : RIGHT_HAND_CONNECTION_COLOR);
+              isLeftHand ? LEFT_HAND_CONNECTION_COLOR : RIGHT_HAND_CONNECTION_COLOR);
       connectionPaint.setStrokeWidth(CONNECTION_THICKNESS);
-      NormalizedLandmark start = handLandmarkList.get(c.start());
-      NormalizedLandmark end = handLandmarkList.get(c.end());
+      Pair<Float,Float> start = squareVertex.get(i);
+      Pair<Float,Float> end = squareVertex.get((i+1)%4);
       canvas.drawLine(
-          start.getX() * width,
-          start.getY() * height,
-          end.getX() * width,
-          end.getY() * height,
-          connectionPaint);
+              start.first * width,
+              start.second * height,
+              end.first * width,
+              end.second * height,
+              connectionPaint);
     }
-    Paint landmarkPaint = new Paint();
+    /*Paint landmarkPaint = new Paint();
     landmarkPaint.setColor(isLeftHand ? LEFT_HAND_LANDMARK_COLOR : RIGHT_HAND_LANDMARK_COLOR);
     // Draws landmarks.
     for (LandmarkProto.NormalizedLandmark landmark : handLandmarkList) {
@@ -122,6 +162,6 @@ public class HandsResultImageView extends AppCompatImageView {
           landmark.getY() * height,
           LANDMARK_RADIUS + HOLLOW_CIRCLE_WIDTH,
           landmarkPaint);
-    }
+    }*/
   }
 }

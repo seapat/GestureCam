@@ -14,15 +14,32 @@
 
 package com.google.mediapipe.examples.hands;
 
+import android.annotation.SuppressLint;
+import android.content.ContentValues;
 import android.graphics.Color;
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.Preview;
+import androidx.camera.core.VideoCapture;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
+
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 // ContentResolver dependency
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mediapipe.components.CameraXPreviewHelper;
 import com.google.mediapipe.formats.proto.LandmarkProto;
 import com.google.mediapipe.formats.proto.LandmarkProto.Landmark;
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmark;
@@ -33,9 +50,11 @@ import com.google.mediapipe.solutions.hands.Hands;
 import com.google.mediapipe.solutions.hands.HandsOptions;
 import com.google.mediapipe.solutions.hands.HandsResult;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Objects;
-
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
 
 /** Main activity of MediaPipe Hands app. */
@@ -53,12 +72,16 @@ public class MainActivity extends AppCompatActivity {
   private InputSource inputSource = InputSource.UNKNOWN;
 
   // the selfie camera will be shown on start-up
-  private CameraInput.CameraFacing cameraFace = CameraInput.CameraFacing.FRONT;
+  private CameraInput.CameraFacing cameraFaceMediapipe = CameraInput.CameraFacing.FRONT;
+  private int cameraFaceCameraX = CameraSelector.LENS_FACING_FRONT;
 
   // Live camera demo UI and camera components.
   private CameraInput cameraInput;
 
   private SolutionGlSurfaceView<HandsResult> glSurfaceView;
+
+
+  private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +89,14 @@ public class MainActivity extends AppCompatActivity {
     setContentView(R.layout.activity_main);
     Objects.requireNonNull(getSupportActionBar()).hide();
     setupLiveDemoUiComponents();
+
+
   }
+
+  Executor getExecutor() {
+    return ContextCompat.getMainExecutor(this);
+  }
+
 
   @Override
   protected void onResume() {
@@ -74,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
     if (inputSource == InputSource.CAMERA) {
       // Restarts the camera and the opengl surface rendering.
       cameraInput = new CameraInput(this);
+
       cameraInput.setNewFrameListener(textureFrame -> hands.send(textureFrame));
       glSurfaceView.post(this::startCamera);
       glSurfaceView.setVisibility(View.VISIBLE);
@@ -95,10 +126,12 @@ public class MainActivity extends AppCompatActivity {
     FloatingActionButton cameraFaceButton = findViewById(R.id.cameraFaceButton);
     cameraFaceButton.setOnClickListener(
             v -> {
-              if (cameraFace == CameraInput.CameraFacing.FRONT) {
-                cameraFace = CameraInput.CameraFacing.BACK;
+              if (cameraFaceMediapipe == CameraInput.CameraFacing.FRONT) {
+                cameraFaceMediapipe = CameraInput.CameraFacing.BACK;
+                cameraFaceCameraX = CameraSelector.LENS_FACING_BACK;
               } else {
-                cameraFace = CameraInput.CameraFacing.FRONT;
+                cameraFaceMediapipe = CameraInput.CameraFacing.FRONT;
+                cameraFaceCameraX = CameraSelector.LENS_FACING_FRONT;
               }
               cameraInput.close();
               this.onResume();
@@ -176,9 +209,74 @@ public class MainActivity extends AppCompatActivity {
     cameraInput.start(
         this,
         hands.getGlContext(),
-        cameraFace, // CameraInput.CameraFacing.FRONT or ...BACK
+        cameraFaceMediapipe, // CameraInput.CameraFacing.FRONT or ...BACK
         glSurfaceView.getWidth(),
         glSurfaceView.getHeight());
+
+    cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+    cameraProviderFuture.addListener(() -> {
+      try {
+        ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+        startCameraX(cameraProvider);
+      } catch (ExecutionException | InterruptedException e) {
+        e.printStackTrace();
+      }
+    }, getExecutor());
+  }
+
+  @SuppressLint("RestrictedApi")
+  private void startCameraX(ProcessCameraProvider cameraProvider) {
+    cameraProvider.unbindAll();
+    CameraSelector cameraSelector = new CameraSelector.Builder()
+            .requireLensFacing(cameraFaceCameraX)
+            .build();
+//    Preview preview = new Preview.Builder()
+//            .build();
+//    preview.setSurfaceProvider(previewView.getSurfaceProvider());
+
+    // Image capture use case
+    imageCapture = new ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .build();
+    FloatingActionButton takePictureButton = findViewById(R.id.takePictureButton);
+    takePictureButton.setOnClickListener(button -> capturePhoto());
+
+    // Video capture use case
+//    videoCapture = new VideoCapture.Builder()
+//            .setVideoFrameRate(30)
+//            .build();
+
+    // Image analysis use case
+//    ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+//            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+//            .build();
+//
+//    imageAnalysis.setAnalyzer(getExecutor(), this);
+
+    //bind to lifecycle:
+//    cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageCapture, videoCapture);
+
+    Preview preview;
+    try {
+      // REFLECTION!
+      // https://stackoverflow.com/questions/1196192/how-to-read-the-value-of-a-private-field-from-a-different-class-in-java
+      Field f1 = cameraInput.getClass().getDeclaredField("cameraHelper"); //NoSuchFieldException
+      f1.setAccessible(true);
+      CameraXPreviewHelper cameraHelper = (CameraXPreviewHelper) f1.get(cameraInput);
+
+      assert cameraHelper != null;
+      Field f2 = cameraHelper.getClass().getDeclaredField("preview"); //NoSuchFieldException
+      f2.setAccessible(true);
+      preview = (Preview) f2.get(cameraHelper);
+      assert preview != null;
+      Log.e(TAG, "Reflection works, accessing the Preview: " + preview);
+    }
+    catch(Exception e) {
+      e.printStackTrace();
+      preview =  (new androidx.camera.core.Preview.Builder()).build();
+    }
+
+    cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
   }
 
   private void stopCurrentPipeline() {
@@ -344,6 +442,48 @@ public class MainActivity extends AppCompatActivity {
       ++handIndex;
     }
     return multiHandLandmarksStr.toString();
+  }
+
+  ///////////////////////////////
+  //// CAMERA: TAKE PICUTRE ////
+  /////////////////////////////
+
+//  PreviewView previewView;
+  private ImageCapture imageCapture;
+  private VideoCapture videoCapture;
+
+
+
+
+  private void capturePhoto() {
+    long unixTime = System.currentTimeMillis()/1000;
+    String timestamp = Long.toString(unixTime);
+
+
+    ContentValues contentValues = new ContentValues();
+    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, timestamp);
+    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+
+    imageCapture.takePicture(
+            new ImageCapture.OutputFileOptions.Builder(
+                    getContentResolver(),
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    contentValues
+            ).build(),
+            getExecutor(),
+            new ImageCapture.OnImageSavedCallback() {
+              @Override
+              public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+                Toast.makeText(MainActivity.this, "Photo has been saved successfully.", Toast.LENGTH_SHORT).show();
+              }
+
+              @Override
+              public void onError(@NonNull ImageCaptureException exception) {
+                Toast.makeText(MainActivity.this, "Error saving photo: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+              }
+            }
+    );
+
   }
 
 }

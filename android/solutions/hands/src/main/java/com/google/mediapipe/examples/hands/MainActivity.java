@@ -317,8 +317,8 @@ public class MainActivity extends AppCompatActivity {
         return "ok hand"; // open fingers have to be stretched
       } else if (!firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) { // thumb state doesn't matter
         return "middle finger";
-      } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
-        return "call me hand"; // Barely works
+//      } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
+//        return "call me hand"; // Barely works
         // This one does not have a fitting emoji
 //      } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) {
 //        return "The L";

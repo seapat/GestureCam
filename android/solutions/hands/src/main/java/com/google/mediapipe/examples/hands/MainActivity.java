@@ -52,13 +52,6 @@ public class MainActivity extends AppCompatActivity {
   }
   private InputSource inputSource = InputSource.UNKNOWN;
 
-//  private enum MediapipeStatus {
-//    UNKNOWN,
-//    RUNNING,
-//    PAUSED
-//  }
-//  private MediapipeStatus mediapipeStatus = MediapipeStatus.UNKNOWN;
-
   // the selfie camera will be shown on start-up
   private CameraInput.CameraFacing cameraFace = CameraInput.CameraFacing.FRONT;
 
@@ -110,18 +103,6 @@ public class MainActivity extends AppCompatActivity {
               cameraInput.close();
               this.onResume();
             });
-
-    // FIXME: Not quite sure how to do this. The Framework might make this impossible
-    //  I want the camera & Preview to stay open but the continuous hand detection to be paused
-//    FloatingActionButton toggleMediapipeButton = findViewById(R.id.toggleMediapipeButton);
-//    toggleMediapipeButton.setOnClickListener(
-//            v -> {
-//              if (mediapipeStatus == MediapipeStatus.RUNNING) {
-//                mediapipeStatus = MediapipeStatus.PAUSED;
-//              } else {
-//                mediapipeStatus = MediapipeStatus.RUNNING;
-//              }
-//            });
 
     stopCurrentPipeline();
     setupStreamingModePipeline(InputSource.CAMERA);

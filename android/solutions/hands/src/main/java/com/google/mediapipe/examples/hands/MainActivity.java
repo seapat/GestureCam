@@ -322,7 +322,9 @@ public class MainActivity extends AppCompatActivity {
         // This one does not have a fitting emoji
 //      } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) {
 //        return "The L";
-      } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) {
+//      } else if (thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
+//        return "Thumbs Up Sign"; // Barely works
+      } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen ) {
         return "raised fist";
       } else {
         String info = "thumbIsOpen " + thumbIsOpen + " firstFingerIsOpen " + firstFingerIsOpen

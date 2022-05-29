@@ -25,10 +25,9 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
-import androidx.camera.core.VideoCapture;
+//import androidx.camera.core.VideoCapture;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LifecycleOwner;
 
 import android.provider.MediaStore;
 import android.util.Log;
@@ -123,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
   /** Sets up the UI components for the live demo with camera input. */
   private void setupLiveDemoUiComponents() {
 
+
     FloatingActionButton cameraFaceButton = findViewById(R.id.cameraFaceButton);
     cameraFaceButton.setOnClickListener(
             v -> {
@@ -137,9 +137,13 @@ public class MainActivity extends AppCompatActivity {
               this.onResume();
             });
 
+    FloatingActionButton takePictureButton = findViewById(R.id.takePictureButton);
+    takePictureButton.setOnClickListener(button -> capturePhoto());
+
     stopCurrentPipeline();
     setupStreamingModePipeline(InputSource.CAMERA);
-//    mediapipeStatus = MediapipeStatus.RUNNING;
+
+
   }
 
   /** Sets up core workflow for streaming mode. */
@@ -213,11 +217,16 @@ public class MainActivity extends AppCompatActivity {
         glSurfaceView.getWidth(),
         glSurfaceView.getHeight());
 
+    // required for taking pictures
+    imageCapture = new ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .build();
+
     cameraProviderFuture = ProcessCameraProvider.getInstance(this);
     cameraProviderFuture.addListener(() -> {
       try {
         ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-        startCameraX(cameraProvider);
+        startCameraHelper(cameraProvider);
       } catch (ExecutionException | InterruptedException e) {
         e.printStackTrace();
       }
@@ -225,47 +234,21 @@ public class MainActivity extends AppCompatActivity {
   }
 
   @SuppressLint("RestrictedApi")
-  private void startCameraX(ProcessCameraProvider cameraProvider) {
+  private void startCameraHelper(ProcessCameraProvider cameraProvider) {
     cameraProvider.unbindAll();
     CameraSelector cameraSelector = new CameraSelector.Builder()
             .requireLensFacing(cameraFaceCameraX)
             .build();
-//    Preview preview = new Preview.Builder()
-//            .build();
-//    preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-    // Image capture use case
-    imageCapture = new ImageCapture.Builder()
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-            .build();
-    FloatingActionButton takePictureButton = findViewById(R.id.takePictureButton);
-    takePictureButton.setOnClickListener(button -> capturePhoto());
-
-    // Video capture use case
-//    videoCapture = new VideoCapture.Builder()
-//            .setVideoFrameRate(30)
-//            .build();
-
-    // Image analysis use case
-//    ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-//            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-//            .build();
-//
-//    imageAnalysis.setAnalyzer(getExecutor(), this);
-
-    //bind to lifecycle:
-//    cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageCapture, videoCapture);
 
     Preview preview;
     try {
-      // REFLECTION!
+      // REFLECTION! We are accessing the Preview object that is created by mediapipe, 2 layers of wrappers and all declared private...
       // https://stackoverflow.com/questions/1196192/how-to-read-the-value-of-a-private-field-from-a-different-class-in-java
-      Field f1 = cameraInput.getClass().getDeclaredField("cameraHelper"); //NoSuchFieldException
+      Field f1 = cameraInput.getClass().getDeclaredField("cameraHelper"); //potential NoSuchFieldException
       f1.setAccessible(true);
       CameraXPreviewHelper cameraHelper = (CameraXPreviewHelper) f1.get(cameraInput);
-
       assert cameraHelper != null;
-      Field f2 = cameraHelper.getClass().getDeclaredField("preview"); //NoSuchFieldException
+      Field f2 = cameraHelper.getClass().getDeclaredField("preview"); //potential NoSuchFieldException
       f2.setAccessible(true);
       preview = (Preview) f2.get(cameraHelper);
       assert preview != null;
@@ -341,6 +324,8 @@ public class MainActivity extends AppCompatActivity {
     boolean thirdFingerIsOpen = false;
     boolean fourthFingerIsOpen = false;
 
+    //FIXME: something is wrong with the calculation I think
+    // Original implementation from github gist, has problems depending on which side of the hand face the camera
     for (LandmarkProto.NormalizedLandmarkList landmarks : multiHandLandmarks) {
 
       List<NormalizedLandmark> landmarkList = landmarks.getLandmarkList();
@@ -352,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
       }
       if (pseudoFixKeyPoint > landmarkList.get(9).getX()) {
         if (landmarkList.get(3).getX() > pseudoFixKeyPoint && landmarkList.get(4).getX() > pseudoFixKeyPoint) {
-          thumbIsOpen = true;
+          thumbIsOpen = false;
         }
       }
       Log.d(TAG, "pseudoFixKeyPoint == " + pseudoFixKeyPoint + "\nlandmarkList.get(2).getX() == " + landmarkList.get(2).getX()
@@ -388,21 +373,23 @@ public class MainActivity extends AppCompatActivity {
         return "victory hand";
       } else if (firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && !thumbIsOpen) {
         return "sign of the horns";
-      } else if (firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
+      } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen) {
         return "love-you gesture";
-      } else if (firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen && !thumbIsOpen){
+      } else if (!fourthFingerIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !thumbIsOpen){
         return "Index pointing";
       } else if (!firstFingerIsOpen && secondFingerIsOpen && thirdFingerIsOpen && fourthFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
         return "ok hand"; // open fingers have to be stretched
       } else if (!firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) { // thumb state doesn't matter
         return "middle finger";
-//      } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
-//        return "call me hand"; // Barely works
+      } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
+        return "call me hand"; // Barely works
+
         // This one does not have a fitting emoji
 //      } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) {
 //        return "The L";
-//      } else if (thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
-//        return "Thumbs Up Sign"; // Barely works
+
+      } else if (!fourthFingerIsOpen && thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
+        return "Thumbs Up Sign"; // Barely works
       } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen ) {
         return "raised fist";
       } else {
@@ -445,20 +432,15 @@ public class MainActivity extends AppCompatActivity {
   }
 
   ///////////////////////////////
-  //// CAMERA: TAKE PICUTRE ////
+  //// CAMERA: TAKE PICTURE ////
   /////////////////////////////
 
-//  PreviewView previewView;
   private ImageCapture imageCapture;
-  private VideoCapture videoCapture;
-
-
-
+//  private VideoCapture videoCapture;
 
   private void capturePhoto() {
     long unixTime = System.currentTimeMillis()/1000;
     String timestamp = Long.toString(unixTime);
-
 
     ContentValues contentValues = new ContentValues();
     contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, timestamp);
@@ -474,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
             new ImageCapture.OnImageSavedCallback() {
               @Override
               public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                Toast.makeText(MainActivity.this, "Photo has been saved successfully.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Photo has been saved successfully to " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPath(), Toast.LENGTH_SHORT).show();
               }
 
               @Override

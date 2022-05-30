@@ -72,7 +72,7 @@ public class HandsResultGlRenderer implements ResultGlRenderer<HandsResult> {
 
   @Override
   public void renderResult(HandsResult result, float[] projectionMatrix) {
-    if (result == null) {
+    if (result == null || MainActivity.captureFlag) {
       return;
     }
     GLES20.glUseProgram(program);

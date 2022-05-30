@@ -29,6 +29,7 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 
+import android.os.CountDownTimer;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -79,6 +80,10 @@ public class MainActivity extends AppCompatActivity {
 
   private SolutionGlSurfaceView<HandsResult> glSurfaceView;
 
+  // Gesture pausing between recognition and shot
+  private TextView timer;
+  public int counter;
+  public static boolean captureFlag=false;
 
   private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
@@ -86,10 +91,9 @@ public class MainActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
+    timer= (TextView) findViewById(R.id.timer);
     Objects.requireNonNull(getSupportActionBar()).hide();
     setupLiveDemoUiComponents();
-
-
   }
 
   Executor getExecutor() {
@@ -175,24 +179,49 @@ public class MainActivity extends AppCompatActivity {
 
 //    String gestureString;
     hands.setResultListener(
+
         handsResult -> {
+
           logWristLandmark(handsResult, /*showPixelValues=*/ false);
 
           runOnUiThread(() -> {
-            String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
+            if(!captureFlag) {
+              String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
+              recognizedGesture.setText(gestureString);
+              recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
+              recognizedGesture.invalidate();
+              recognizedGesture.requestLayout();
+              recognizedGesture.bringToFront();
+              Log.i(TAG, "Gesture recognized " + gestureString);
 
-            recognizedGesture.setText(gestureString);
-            recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
-            recognizedGesture.invalidate();
-            recognizedGesture.requestLayout();
-            recognizedGesture.bringToFront();
-            Log.i(TAG, "Gesture recognized " + gestureString);
+              if (gestureString == "victory hand") {
+                captureFlag=true;
+                new CountDownTimer(4000, 1000) {
+                  public void onTick(long millisUntilFinished) {
+                    timer.setVisibility(View.VISIBLE);
+                    recognizedGesture.setVisibility(View.GONE);
+                    timer.setText(String.valueOf(millisUntilFinished / 1000));
+                    timer.setTextColor(Color.parseColor("#FFFFFF"));
+                    timer.invalidate();
+                    timer.requestLayout();
+                    timer.bringToFront();
+                    counter++;
+                  }
+
+                  public void onFinish() {
+                    capturePhoto();
+                    counter = 0;
+                    timer.setVisibility(View.GONE);
+                    recognizedGesture.setVisibility(View.VISIBLE);
+                    captureFlag=false;
+                  }
+                }.start();
+              }
+            }
           });
 
-
-
-          glSurfaceView.setRenderData(handsResult);
-          glSurfaceView.requestRender();
+            glSurfaceView.setRenderData(handsResult);
+            glSurfaceView.requestRender();
         });
 
     // The runnable to start camera after the gl surface view is attached.

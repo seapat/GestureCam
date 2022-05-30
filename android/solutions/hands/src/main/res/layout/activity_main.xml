@@ -11,11 +11,27 @@ http://schemas.android.com/apk/res-auto
 http://schemas.android.com/tools ">
 
     <TextView
+        android:id="@+id/timer"
+
+        android:layout_centerHorizontal="true"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textSize="40sp"
+        android:text=""
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="500dp"/>
+
+    <TextView
         android:id="@+id/recognizedGesture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="50dp"
-        android:text="@string/gestureName"
+        android:text=""
         android:textSize="24sp"
         android:typeface="normal"
         android:visibility="visible"
@@ -46,11 +62,11 @@ http://schemas.android.com/tools ">
         android:layout_gravity="start"
         android:layout_marginStart="16dp"
         android:layout_marginBottom="16dp"
+        android:contentDescription="@string/takes_pictures"
         android:src="@android:drawable/ic_menu_camera"
         app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:contentDescription="@string/takes_pictures" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <FrameLayout
         android:id="@+id/preview_display_layout"

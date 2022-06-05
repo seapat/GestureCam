@@ -7,4 +7,5 @@
     <string name="start_or_stop_mediapipe">start or stop mediapipe</string>
     <string name="gestureName" />
     <string name="takes_pictures">takes Pictures</string>
+    <string name="gesture_selection">Modify Gesture for Shot</string>
 </resources>

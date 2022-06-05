@@ -32,8 +32,12 @@ import androidx.core.content.ContextCompat;
 import android.os.CountDownTimer;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 // ContentResolver dependency
@@ -58,7 +62,7 @@ import java.util.concurrent.Executor;
 
 
 /** Main activity of MediaPipe Hands app. */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener {
   private static final String TAG = "MainActivity";
 
   private Hands hands;
@@ -68,6 +72,19 @@ public class MainActivity extends AppCompatActivity {
   private enum InputSource {
     UNKNOWN,
     CAMERA,
+  }
+
+  private enum HandGesture{
+    VICTORY,
+    HORNS,
+    LOVE,
+    INDEX,
+    OK,
+    MIDDLE,
+    CALL,
+    THUMBS,
+    FIST,
+    UNDEFINED
   }
   private InputSource inputSource = InputSource.UNKNOWN;
 
@@ -83,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
   // Gesture pausing between recognition and shot
   private TextView timer;
   public int counter;
+  public HandGesture lastGesture;
+  public HandGesture activationGesture=HandGesture.VICTORY;
   public static boolean captureFlag=false;
 
   private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
@@ -94,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
     timer= (TextView) findViewById(R.id.timer);
     Objects.requireNonNull(getSupportActionBar()).hide();
     setupLiveDemoUiComponents();
+
   }
 
   Executor getExecutor() {
@@ -126,6 +146,17 @@ public class MainActivity extends AppCompatActivity {
   /** Sets up the UI components for the live demo with camera input. */
   private void setupLiveDemoUiComponents() {
 
+    FloatingActionButton btn = findViewById(R.id.gestureButton);
+    btn.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        PopupMenu popup = new PopupMenu(MainActivity.this, v);
+        popup.setOnMenuItemClickListener( MainActivity.this);
+        popup.inflate(R.menu.menu_gestures);
+        popup.show();
+      }
+    });
+
 
     FloatingActionButton cameraFaceButton = findViewById(R.id.cameraFaceButton);
     cameraFaceButton.setOnClickListener(
@@ -148,6 +179,39 @@ public class MainActivity extends AppCompatActivity {
     setupStreamingModePipeline(InputSource.CAMERA);
 
 
+  }
+
+  @Override
+  public boolean onMenuItemClick(MenuItem item) {
+    Toast.makeText(this, "Selected gesture for shot: " +item.getTitle(), Toast.LENGTH_SHORT).show();
+    switch (item.getItemId()) {
+      case R.id.victory:
+        activationGesture=HandGesture.VICTORY;
+        return true;
+      case R.id.index:
+        activationGesture=HandGesture.INDEX;
+        return true;
+      case R.id.horns:
+        activationGesture=HandGesture.HORNS;
+        return true;
+      case R.id.ok:
+        activationGesture=HandGesture.OK;
+        return true;
+      case R.id.fist:
+        activationGesture=HandGesture.FIST;
+        return true;
+      case R.id.call:
+        activationGesture=HandGesture.CALL;
+        return true;
+      case R.id.love:
+        activationGesture=HandGesture.LOVE;
+        return true;
+      case R.id.middle:
+        activationGesture=HandGesture.MIDDLE;
+        return true;
+      default:
+        return false;
+    }
   }
 
   /** Sets up core workflow for streaming mode. */
@@ -186,21 +250,22 @@ public class MainActivity extends AppCompatActivity {
 
           runOnUiThread(() -> {
             if(!captureFlag) {
+              lastGesture=HandGesture.UNDEFINED;
               String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
               recognizedGesture.setText(gestureString);
               recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
               recognizedGesture.invalidate();
               recognizedGesture.requestLayout();
               recognizedGesture.bringToFront();
-              Log.i(TAG, "Gesture recognized " + gestureString);
+              Log.i(TAG, "Camera activation ");
 
-              if (gestureString == "victory hand") {
+              if (lastGesture == activationGesture) {
                 captureFlag=true;
-                new CountDownTimer(4000, 1000) {
+                new CountDownTimer(3000, 1000) {
                   public void onTick(long millisUntilFinished) {
                     timer.setVisibility(View.VISIBLE);
                     recognizedGesture.setVisibility(View.GONE);
-                    timer.setText(String.valueOf(millisUntilFinished / 1000));
+                    timer.setText(String.valueOf(1 + millisUntilFinished / 1000));
                     timer.setTextColor(Color.parseColor("#FFFFFF"));
                     timer.invalidate();
                     timer.requestLayout();
@@ -214,6 +279,7 @@ public class MainActivity extends AppCompatActivity {
                     timer.setVisibility(View.GONE);
                     recognizedGesture.setVisibility(View.VISIBLE);
                     captureFlag=false;
+                    lastGesture=HandGesture.UNDEFINED;
                   }
                 }.start();
               }
@@ -399,18 +465,25 @@ public class MainActivity extends AppCompatActivity {
       *  All gestures are represented by standard emojis, their strings correspond to the emoji names
       * */
       if (firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen && !thumbIsOpen) {
+        lastGesture=HandGesture.VICTORY;
         return "victory hand";
       } else if (firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && !thumbIsOpen) {
+        lastGesture=HandGesture.HORNS;
         return "sign of the horns";
       } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen) {
+        lastGesture=HandGesture.LOVE;
         return "love-you gesture";
       } else if (!fourthFingerIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !thumbIsOpen){
+        lastGesture=HandGesture.INDEX;
         return "Index pointing";
       } else if (!firstFingerIsOpen && secondFingerIsOpen && thirdFingerIsOpen && fourthFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
+        lastGesture=HandGesture.OK;
         return "ok hand"; // open fingers have to be stretched
       } else if (!firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) { // thumb state doesn't matter
+        lastGesture=HandGesture.MIDDLE;
         return "middle finger";
       } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
+        lastGesture=HandGesture.CALL;
         return "call me hand"; // Barely works
 
         // This one does not have a fitting emoji
@@ -418,10 +491,13 @@ public class MainActivity extends AppCompatActivity {
 //        return "The L";
 
       } else if (!fourthFingerIsOpen && thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
+        lastGesture=HandGesture.THUMBS;
         return "Thumbs Up Sign"; // Barely works
       } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen ) {
+        lastGesture=HandGesture.FIST;
         return "raised fist";
       } else {
+        lastGesture=HandGesture.UNDEFINED;
         String info = "thumbIsOpen " + thumbIsOpen + " firstFingerIsOpen " + firstFingerIsOpen
                 + " secondFingerIsOpen " + secondFingerIsOpen +
                 " thirdFingerIsOpen " + thirdFingerIsOpen + " fourthFingerIsOpen " + fourthFingerIsOpen;

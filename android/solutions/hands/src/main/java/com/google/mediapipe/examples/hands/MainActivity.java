@@ -25,17 +25,14 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
-//import androidx.camera.core.VideoCapture;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 
 import android.os.CountDownTimer;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -55,7 +52,9 @@ import com.google.mediapipe.solutions.hands.HandsOptions;
 import com.google.mediapipe.solutions.hands.HandsResult;
 
 import java.lang.reflect.Field;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -74,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     CAMERA,
   }
 
+  // Hand Gestures supported by the app
   private enum HandGesture{
     VICTORY,
     HORNS,
@@ -86,6 +86,20 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     FIST,
     UNDEFINED
   }
+
+  // Dictionary mapping icons with gestures
+  private static final EnumMap<HandGesture,Integer> gestureEmojis= new EnumMap<>(Map.of(
+          HandGesture.VICTORY, 0x270C,
+          HandGesture.HORNS, 0x1F918,
+          HandGesture.LOVE, 0x1F91F,
+          HandGesture.INDEX, 0x261D,
+          HandGesture.OK, 0x1f44c,
+          HandGesture.MIDDLE, 0x1f595,
+          HandGesture.CALL, 0x1F919,
+          HandGesture.THUMBS, 0x1F44D,
+          HandGesture.FIST, 0x270A
+  ));
+
   private InputSource inputSource = InputSource.UNKNOWN;
 
   // the selfie camera will be shown on start-up
@@ -99,9 +113,20 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
   // Gesture pausing between recognition and shot
   private TextView timer;
+
+  // Emoji view for activationGesture
+  private TextView activationEmoji;
+
+  // Counter var for previous to the shot
   public int counter;
+
+  // Last Gesture registered
   public HandGesture lastGesture;
+
+  // Activation Gesture for shot. Default VICTORY HAND
   public HandGesture activationGesture=HandGesture.VICTORY;
+
+  // Denotes activation of the counter previous to the shot
   public static boolean captureFlag=false;
 
   private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
@@ -110,10 +135,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    timer= (TextView) findViewById(R.id.timer);
     Objects.requireNonNull(getSupportActionBar()).hide();
     setupLiveDemoUiComponents();
-
   }
 
   Executor getExecutor() {
@@ -157,6 +180,14 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       }
     });
 
+    timer= (TextView) findViewById(R.id.timer);
+    activationEmoji= (TextView) findViewById(R.id.gestureEmoji);
+    activationEmoji.setVisibility(View.VISIBLE);
+    activationEmoji.setText(getEmoji(0x270C));
+    activationEmoji.invalidate();
+    activationEmoji.requestLayout();
+    activationEmoji.bringToFront();
+
 
     FloatingActionButton cameraFaceButton = findViewById(R.id.cameraFaceButton);
     cameraFaceButton.setOnClickListener(
@@ -177,9 +208,11 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     stopCurrentPipeline();
     setupStreamingModePipeline(InputSource.CAMERA);
-
-
   }
+
+  ///////////////////////////////
+  //// SETTINGS: GESTURE SELECTION ////
+  /////////////////////////////
 
   @Override
   public boolean onMenuItemClick(MenuItem item) {
@@ -187,32 +220,46 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     switch (item.getItemId()) {
       case R.id.victory:
         activationGesture=HandGesture.VICTORY;
+        activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.VICTORY)));
         return true;
       case R.id.index:
         activationGesture=HandGesture.INDEX;
+        activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.INDEX)));
         return true;
       case R.id.horns:
         activationGesture=HandGesture.HORNS;
+        activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.HORNS)));
         return true;
       case R.id.ok:
         activationGesture=HandGesture.OK;
+        activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.OK)));
         return true;
       case R.id.fist:
         activationGesture=HandGesture.FIST;
+        activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.FIST)));
         return true;
       case R.id.call:
         activationGesture=HandGesture.CALL;
+        activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.CALL)));
         return true;
       case R.id.love:
         activationGesture=HandGesture.LOVE;
+        activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.LOVE)));
         return true;
       case R.id.middle:
         activationGesture=HandGesture.MIDDLE;
+        activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.MIDDLE)));
         return true;
       default:
         return false;
     }
   }
+
+  // Unicode emoji to String
+  private String getEmoji(int unicode){
+    return new String(Character.toChars(unicode));
+  }
+
 
   /** Sets up core workflow for streaming mode. */
   private void setupStreamingModePipeline(InputSource inputSource) {
@@ -241,7 +288,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     TextView recognizedGesture = findViewById(R.id.recognizedGesture);
 
-//    String gestureString;
     hands.setResultListener(
 
         handsResult -> {
@@ -259,6 +305,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
               recognizedGesture.bringToFront();
               Log.i(TAG, "Camera activation ");
 
+
               if (lastGesture == activationGesture) {
                 captureFlag=true;
                 new CountDownTimer(3000, 1000) {
@@ -272,7 +319,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                     timer.bringToFront();
                     counter++;
                   }
-
                   public void onFinish() {
                     capturePhoto();
                     counter = 0;
@@ -282,6 +328,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                     lastGesture=HandGesture.UNDEFINED;
                   }
                 }.start();
+
               }
             }
           });
@@ -466,25 +513,25 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       * */
       if (firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen && !thumbIsOpen) {
         lastGesture=HandGesture.VICTORY;
-        return "victory hand";
+        return getEmoji(gestureEmojis.get(HandGesture.VICTORY));
       } else if (firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && !thumbIsOpen) {
         lastGesture=HandGesture.HORNS;
-        return "sign of the horns";
+        return getEmoji(gestureEmojis.get(HandGesture.HORNS));
       } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen) {
         lastGesture=HandGesture.LOVE;
-        return "love-you gesture";
+        return getEmoji(gestureEmojis.get(HandGesture.LOVE));
       } else if (!fourthFingerIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !thumbIsOpen){
         lastGesture=HandGesture.INDEX;
-        return "Index pointing";
+        return getEmoji(gestureEmojis.get(HandGesture.INDEX));
       } else if (!firstFingerIsOpen && secondFingerIsOpen && thirdFingerIsOpen && fourthFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
         lastGesture=HandGesture.OK;
-        return "ok hand"; // open fingers have to be stretched
+        return getEmoji(gestureEmojis.get(HandGesture.OK)); // open fingers have to be stretched
       } else if (!firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) { // thumb state doesn't matter
         lastGesture=HandGesture.MIDDLE;
-        return "middle finger";
+        return getEmoji(gestureEmojis.get(HandGesture.MIDDLE));
       } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
         lastGesture=HandGesture.CALL;
-        return "call me hand"; // Barely works
+        return getEmoji(gestureEmojis.get(HandGesture.CALL)); // Barely works
 
         // This one does not have a fitting emoji
 //      } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) {
@@ -492,10 +539,10 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
       } else if (!fourthFingerIsOpen && thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
         lastGesture=HandGesture.THUMBS;
-        return "Thumbs Up Sign"; // Barely works
+        return getEmoji(gestureEmojis.get(HandGesture.THUMBS)); // Barely works
       } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen ) {
         lastGesture=HandGesture.FIST;
-        return "raised fist";
+        return getEmoji(gestureEmojis.get(HandGesture.FIST));
       } else {
         lastGesture=HandGesture.UNDEFINED;
         String info = "thumbIsOpen " + thumbIsOpen + " firstFingerIsOpen " + firstFingerIsOpen

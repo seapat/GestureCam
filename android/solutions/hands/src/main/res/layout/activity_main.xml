@@ -41,6 +41,21 @@ http://schemas.android.com/tools ">
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/gestureEmoji"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text=""
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textSize="40sp"
+        android:visibility="visible"
+        app:fabSize="normal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
         android:id="@+id/recognizedGesture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

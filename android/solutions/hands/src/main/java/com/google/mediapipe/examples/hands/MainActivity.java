@@ -369,12 +369,14 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         glSurfaceView.getWidth(),
         glSurfaceView.getHeight());
 
+    cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+
     // required for taking pictures
     imageCapture = new ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
             .build();
 
-    cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+
     cameraProviderFuture.addListener(() -> {
       try {
         ProcessCameraProvider cameraProvider = cameraProviderFuture.get();

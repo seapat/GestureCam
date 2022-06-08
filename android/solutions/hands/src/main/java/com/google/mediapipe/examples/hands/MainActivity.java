@@ -311,7 +311,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 new CountDownTimer(3000, 1000) {
                   public void onTick(long millisUntilFinished) {
                     timer.setVisibility(View.VISIBLE);
-                    recognizedGesture.setVisibility(View.GONE);
+//                    recognizedGesture.setVisibility(View.GONE);
                     timer.setText(String.valueOf(1 + millisUntilFinished / 1000));
                     timer.setTextColor(Color.parseColor("#FFFFFF"));
                     timer.invalidate();
@@ -323,9 +323,19 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                     capturePhoto();
                     counter = 0;
                     timer.setVisibility(View.GONE);
-                    recognizedGesture.setVisibility(View.VISIBLE);
-                    captureFlag=false;
+//                    recognizedGesture.setVisibility(View.VISIBLE);
+
                     lastGesture=HandGesture.UNDEFINED;
+                    new CountDownTimer(2000, 1000) {
+                      public void onTick(long l) {
+                        Log.i(TAG, "extra timer is called");
+
+                      }
+                      public void onFinish() {
+                        Log.i(TAG, "extra timer is called");
+                        captureFlag=false;
+                      }
+                    }.start();
                   }
                 }.start();
 

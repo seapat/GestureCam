@@ -7,7 +7,7 @@
       android:targetSdkVersion="30" />
 
   <!-- For loading images from gallery -->
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <!-- For using the camera -->
   <uses-permission android:name="android.permission.CAMERA" />
   <uses-feature android:name="android.hardware.camera" />
@@ -21,7 +21,8 @@
       android:label="GestureCam"
       android:roundIcon="@mipmap/ic_launcher_round"
       android:supportsRtl="true"
-      android:theme="@style/AppTheme">
+      android:theme="@style/AppTheme"
+      android:requestLegacyExternalStorage="true">
     <activity android:name=".MainActivity"
               android:screenOrientation="portrait">
       <intent-filter>

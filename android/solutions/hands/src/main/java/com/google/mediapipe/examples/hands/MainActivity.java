@@ -14,9 +14,25 @@
 
 package com.google.mediapipe.examples.hands;
 
+import static androidx.camera.core.CameraX.getContext;
+
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -26,19 +42,24 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.os.CountDownTimer;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 // ContentResolver dependency
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mediapipe.components.CameraXPreviewHelper;
 import com.google.mediapipe.formats.proto.LandmarkProto;
@@ -51,8 +72,15 @@ import com.google.mediapipe.solutions.hands.Hands;
 import com.google.mediapipe.solutions.hands.HandsOptions;
 import com.google.mediapipe.solutions.hands.HandsResult;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -74,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   }
 
   // Hand Gestures supported by the app
-  private enum HandGesture{
+  private enum HandGesture {
     VICTORY,
     HORNS,
     LOVE,
@@ -88,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   }
 
   // Dictionary mapping icons with gestures
-  private static final EnumMap<HandGesture,Integer> gestureEmojis= new EnumMap<>(Map.of(
+  private static final EnumMap<HandGesture, Integer> gestureEmojis = new EnumMap<>(Map.of(
           HandGesture.VICTORY, 0x270C,
           HandGesture.HORNS, 0x1F918,
           HandGesture.LOVE, 0x1F91F,
@@ -99,6 +127,21 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
           HandGesture.THUMBS, 0x1F44D,
           HandGesture.FIST, 0x270A
   ));
+
+  // Dictionary of writing text
+  private static final HashMap<HandGesture, String> gestureTexts = new HashMap<HandGesture, String>(Map.of(
+          HandGesture.VICTORY, "VICTORY",
+          HandGesture.HORNS, "HORNS",
+          HandGesture.LOVE, "LOVE",
+          HandGesture.INDEX, "INDEX",
+          HandGesture.OK, "OK",
+          HandGesture.MIDDLE, "MIDDLE",
+          HandGesture.CALL, "CALL",
+          HandGesture.THUMBS, "THUMBS",
+          HandGesture.FIST, "FIST"
+
+  ));
+
 
   private InputSource inputSource = InputSource.UNKNOWN;
 
@@ -124,10 +167,10 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   public HandGesture lastGesture;
 
   // Activation Gesture for shot. Default VICTORY HAND
-  public HandGesture activationGesture=HandGesture.VICTORY;
+  public HandGesture activationGesture = HandGesture.VICTORY;
 
   // Denotes activation of the counter previous to the shot
-  public static boolean captureFlag=false;
+  public static boolean captureFlag = false;
 
   private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
@@ -137,6 +180,21 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     setContentView(R.layout.activity_main);
     Objects.requireNonNull(getSupportActionBar()).hide();
     setupLiveDemoUiComponents();
+
+    assignViews();
+
+    _btn_map_depot.setOnClickListener(new Button.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        Intent intent = new Intent();
+        /* 开启Pictures画面Type设定为image */
+        intent.setType("image/*");
+        /* 使用Intent.ACTION_GET_CONTENT这个Action */
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        /* 取得相片后返回本画面 */
+        startActivityForResult(intent, 1);
+      }
+    });
   }
 
   Executor getExecutor() {
@@ -166,7 +224,9 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     }
   }
 
-  /** Sets up the UI components for the live demo with camera input. */
+  /**
+   * Sets up the UI components for the live demo with camera input.
+   */
   private void setupLiveDemoUiComponents() {
 
     FloatingActionButton btn = findViewById(R.id.gestureButton);
@@ -174,14 +234,15 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       @Override
       public void onClick(View v) {
         PopupMenu popup = new PopupMenu(MainActivity.this, v);
-        popup.setOnMenuItemClickListener( MainActivity.this);
+        popup.setOnMenuItemClickListener(MainActivity.this);
         popup.inflate(R.menu.menu_gestures);
         popup.show();
+        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
       }
     });
 
-    timer= (TextView) findViewById(R.id.timer);
-    activationEmoji= (TextView) findViewById(R.id.gestureEmoji);
+    timer = (TextView) findViewById(R.id.timer);
+    activationEmoji = (TextView) findViewById(R.id.gestureEmoji);
     activationEmoji.setVisibility(View.VISIBLE);
     activationEmoji.setText(getEmoji(0x270C));
     activationEmoji.invalidate();
@@ -204,7 +265,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             });
 
     FloatingActionButton takePictureButton = findViewById(R.id.takePictureButton);
-    takePictureButton.setOnClickListener(button -> capturePhoto());
+    takePictureButton.setOnClickListener(button -> {
+      try {
+        capturePhoto();
+      } catch (FileNotFoundException e) {
+        e.printStackTrace();
+      }
+    });
 
     stopCurrentPipeline();
     setupStreamingModePipeline(InputSource.CAMERA);
@@ -216,38 +283,38 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
   @Override
   public boolean onMenuItemClick(MenuItem item) {
-    Toast.makeText(this, "Selected gesture for shot: " +item.getTitle(), Toast.LENGTH_SHORT).show();
+    Toast.makeText(this, "Selected gesture for shot: " + item.getTitle(), Toast.LENGTH_SHORT).show();
     switch (item.getItemId()) {
       case R.id.victory:
-        activationGesture=HandGesture.VICTORY;
+        activationGesture = HandGesture.VICTORY;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.VICTORY)));
         return true;
       case R.id.index:
-        activationGesture=HandGesture.INDEX;
+        activationGesture = HandGesture.INDEX;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.INDEX)));
         return true;
       case R.id.horns:
-        activationGesture=HandGesture.HORNS;
+        activationGesture = HandGesture.HORNS;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.HORNS)));
         return true;
       case R.id.ok:
-        activationGesture=HandGesture.OK;
+        activationGesture = HandGesture.OK;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.OK)));
         return true;
       case R.id.fist:
-        activationGesture=HandGesture.FIST;
+        activationGesture = HandGesture.FIST;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.FIST)));
         return true;
       case R.id.call:
-        activationGesture=HandGesture.CALL;
+        activationGesture = HandGesture.CALL;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.CALL)));
         return true;
       case R.id.love:
-        activationGesture=HandGesture.LOVE;
+        activationGesture = HandGesture.LOVE;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.LOVE)));
         return true;
       case R.id.middle:
-        activationGesture=HandGesture.MIDDLE;
+        activationGesture = HandGesture.MIDDLE;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.MIDDLE)));
         return true;
       default:
@@ -256,23 +323,25 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   }
 
   // Unicode emoji to String
-  private String getEmoji(int unicode){
+  private String getEmoji(int unicode) {
     return new String(Character.toChars(unicode));
   }
 
 
-  /** Sets up core workflow for streaming mode. */
+  /**
+   * Sets up core workflow for streaming mode.
+   */
   private void setupStreamingModePipeline(InputSource inputSource) {
     this.inputSource = inputSource;
     // Initializes a new MediaPipe Hands solution instance in the streaming mode.
     hands =
-        new Hands(
-            this,
-            HandsOptions.builder()
-                .setStaticImageMode(false)
-                .setMaxNumHands(1)
-                .setRunOnGpu(RUN_ON_GPU)
-                .build());
+            new Hands(
+                    this,
+                    HandsOptions.builder()
+                            .setStaticImageMode(false)
+                            .setMaxNumHands(1)
+                            .setRunOnGpu(RUN_ON_GPU)
+                            .build());
     hands.setErrorListener((message, e) -> Log.e(TAG, "MediaPipe Hands error:" + message));
 
     if (inputSource == InputSource.CAMERA) {
@@ -282,7 +351,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     // Initializes a new Gl surface view with a user-defined HandsResultGlRenderer.
     glSurfaceView =
-        new SolutionGlSurfaceView<>(this, hands.getGlContext(), hands.getGlMajorVersion());
+            new SolutionGlSurfaceView<>(this, hands.getGlContext(), hands.getGlMajorVersion());
     glSurfaceView.setSolutionResultRenderer(new HandsResultGlRenderer());
     glSurfaceView.setRenderInputImage(true);
 
@@ -290,62 +359,69 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     hands.setResultListener(
 
-        handsResult -> {
+            handsResult -> {
 
-          logWristLandmark(handsResult, /*showPixelValues=*/ false);
+              logWristLandmark(handsResult, /*showPixelValues=*/ false);
 
-          runOnUiThread(() -> {
-            if(!captureFlag) {
-              lastGesture=HandGesture.UNDEFINED;
-              String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
-              recognizedGesture.setText(gestureString);
-              recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
-              recognizedGesture.invalidate();
-              recognizedGesture.requestLayout();
-              recognizedGesture.bringToFront();
-              Log.i(TAG, "Camera activation ");
+              runOnUiThread(() -> {
+                if (!captureFlag) {
+                  lastGesture = HandGesture.UNDEFINED;
+                  String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
+                  recognizedGesture.setText(gestureString);
+                  recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
+                  recognizedGesture.invalidate();
+                  recognizedGesture.requestLayout();
+                  recognizedGesture.bringToFront();
+                  Log.i(TAG, "Camera activation ");
 
 
-              if (lastGesture == activationGesture) {
-                captureFlag=true;
-                new CountDownTimer(3000, 1000) {
-                  public void onTick(long millisUntilFinished) {
-                    timer.setVisibility(View.VISIBLE);
+                  if (lastGesture == activationGesture) {
+                    captureFlag = true;
+                    new CountDownTimer(3000, 1000) {
+                      public void onTick(long millisUntilFinished) {
+                        timer.setVisibility(View.VISIBLE);
 //                    recognizedGesture.setVisibility(View.GONE);
-                    timer.setText(String.valueOf(1 + millisUntilFinished / 1000));
-                    timer.setTextColor(Color.parseColor("#FFFFFF"));
-                    timer.invalidate();
-                    timer.requestLayout();
-                    timer.bringToFront();
-                    counter++;
-                  }
-                  public void onFinish() {
-                    capturePhoto();
-                    counter = 0;
-                    timer.setVisibility(View.GONE);
+                        timer.setText(String.valueOf(1 + millisUntilFinished / 1000));
+                        timer.setTextColor(Color.parseColor("#FFFFFF"));
+                        timer.invalidate();
+                        timer.requestLayout();
+                        timer.bringToFront();
+                        counter++;
+                      }
+
+                      public void onFinish() {
+                        try {
+                          capturePhoto();
+                        } catch (FileNotFoundException e) {
+                          e.printStackTrace();
+                        }
+
+                        counter = 0;
+                        timer.setVisibility(View.GONE);
 //                    recognizedGesture.setVisibility(View.VISIBLE);
 
-                    lastGesture=HandGesture.UNDEFINED;
-                    new CountDownTimer(2000, 1000) {
-                      public void onTick(long l) {
-                        Log.i(TAG, "extra timer is called");
+                        lastGesture = HandGesture.UNDEFINED;
+                        new CountDownTimer(2000, 1000) {
+                          public void onTick(long l) {
+                            Log.i(TAG, "extra timer is called");
 
-                      }
-                      public void onFinish() {
-                        Log.i(TAG, "extra timer is called");
-                        captureFlag=false;
+                          }
+
+                          public void onFinish() {
+                            Log.i(TAG, "extra timer is called");
+                            captureFlag = false;
+                          }
+                        }.start();
                       }
                     }.start();
+
                   }
-                }.start();
+                }
+              });
 
-              }
-            }
-          });
-
-            glSurfaceView.setRenderData(handsResult);
-            glSurfaceView.requestRender();
-        });
+              glSurfaceView.setRenderData(handsResult);
+              glSurfaceView.requestRender();
+            });
 
     // The runnable to start camera after the gl surface view is attached.
     // For video input source, videoInput.start() will be called when the video uri is available.
@@ -363,11 +439,11 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
   private void startCamera() {
     cameraInput.start(
-        this,
-        hands.getGlContext(),
-        cameraFaceMediapipe, // CameraInput.CameraFacing.FRONT or ...BACK
-        glSurfaceView.getWidth(),
-        glSurfaceView.getHeight());
+            this,
+            hands.getGlContext(),
+            cameraFaceMediapipe, // CameraInput.CameraFacing.FRONT or ...BACK
+            glSurfaceView.getWidth(),
+            glSurfaceView.getHeight());
 
     cameraProviderFuture = ProcessCameraProvider.getInstance(this);
 
@@ -407,10 +483,9 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       preview = (Preview) f2.get(cameraHelper);
       assert preview != null;
       Log.e(TAG, "Reflection works, accessing the Preview: " + preview);
-    }
-    catch(Exception e) {
+    } catch (Exception e) {
       e.printStackTrace();
-      preview =  (new androidx.camera.core.Preview.Builder()).build();
+      preview = (new androidx.camera.core.Preview.Builder()).build();
     }
 
     cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
@@ -434,34 +509,34 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       return;
     }
     NormalizedLandmark wristLandmark =
-        result.multiHandLandmarks().get(0).getLandmarkList().get(HandLandmark.WRIST);
+            result.multiHandLandmarks().get(0).getLandmarkList().get(HandLandmark.WRIST);
     // For Bitmaps, show the pixel values. For texture inputs, show the normalized coordinates.
     if (showPixelValues) {
       int width = result.inputBitmap().getWidth();
       int height = result.inputBitmap().getHeight();
       Log.i(
-          TAG,
-          String.format(
-              "MediaPipe Hand wrist coordinates (pixel values): x=%f, y=%f",
-              wristLandmark.getX() * width, wristLandmark.getY() * height));
+              TAG,
+              String.format(
+                      "MediaPipe Hand wrist coordinates (pixel values): x=%f, y=%f",
+                      wristLandmark.getX() * width, wristLandmark.getY() * height));
     } else {
       Log.i(
-          TAG,
-          String.format(
-              "MediaPipe Hand wrist normalized coordinates (value range: [0, 1]): x=%f, y=%f",
-              wristLandmark.getX(), wristLandmark.getY()));
+              TAG,
+              String.format(
+                      "MediaPipe Hand wrist normalized coordinates (value range: [0, 1]): x=%f, y=%f",
+                      wristLandmark.getX(), wristLandmark.getY()));
     }
     if (result.multiHandWorldLandmarks().isEmpty()) {
       return;
     }
     Landmark wristWorldLandmark =
-        result.multiHandWorldLandmarks().get(0).getLandmarkList().get(HandLandmark.WRIST);
+            result.multiHandWorldLandmarks().get(0).getLandmarkList().get(HandLandmark.WRIST);
     Log.i(
-        TAG,
-        String.format(
-            "MediaPipe Hand wrist world coordinates (in meters with the origin at the hand's"
-                + " approximate geometric center): x=%f m, y=%f m, z=%f m",
-            wristWorldLandmark.getX(), wristWorldLandmark.getY(), wristWorldLandmark.getZ()));
+            TAG,
+            String.format(
+                    "MediaPipe Hand wrist world coordinates (in meters with the origin at the hand's"
+                            + " approximate geometric center): x=%f m, y=%f m, z=%f m",
+                    wristWorldLandmark.getX(), wristWorldLandmark.getY(), wristWorldLandmark.getZ()));
   }
 
   ////////////////////////////
@@ -516,33 +591,33 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       // TODO: writing this in a nested fashion might be better, right now reaching "On the Phone" is difficult
       //  The order probably should be 1st -> 2nd -> 3rd -> 4th -> thumb (last because it is the most complex here)
       /* Hand gesture recognition
-      * First = Index finger
-      *  Second = Middle finger
-      *  Third = Ring finger
-      *  Fourth = Pinky
-      *
-      *  All gestures are represented by standard emojis, their strings correspond to the emoji names
-      * */
+       * First = Index finger
+       *  Second = Middle finger
+       *  Third = Ring finger
+       *  Fourth = Pinky
+       *
+       *  All gestures are represented by standard emojis, their strings correspond to the emoji names
+       * */
       if (firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen && !thumbIsOpen) {
-        lastGesture=HandGesture.VICTORY;
+        lastGesture = HandGesture.VICTORY;
         return getEmoji(gestureEmojis.get(HandGesture.VICTORY));
       } else if (firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && !thumbIsOpen) {
-        lastGesture=HandGesture.HORNS;
+        lastGesture = HandGesture.HORNS;
         return getEmoji(gestureEmojis.get(HandGesture.HORNS));
       } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen) {
-        lastGesture=HandGesture.LOVE;
+        lastGesture = HandGesture.LOVE;
         return getEmoji(gestureEmojis.get(HandGesture.LOVE));
-      } else if (!fourthFingerIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !thumbIsOpen){
-        lastGesture=HandGesture.INDEX;
+      } else if (!fourthFingerIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !thumbIsOpen) {
+        lastGesture = HandGesture.INDEX;
         return getEmoji(gestureEmojis.get(HandGesture.INDEX));
       } else if (!firstFingerIsOpen && secondFingerIsOpen && thirdFingerIsOpen && fourthFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
-        lastGesture=HandGesture.OK;
+        lastGesture = HandGesture.OK;
         return getEmoji(gestureEmojis.get(HandGesture.OK)); // open fingers have to be stretched
       } else if (!firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) { // thumb state doesn't matter
-        lastGesture=HandGesture.MIDDLE;
+        lastGesture = HandGesture.MIDDLE;
         return getEmoji(gestureEmojis.get(HandGesture.MIDDLE));
       } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
-        lastGesture=HandGesture.CALL;
+        lastGesture = HandGesture.CALL;
         return getEmoji(gestureEmojis.get(HandGesture.CALL)); // Barely works
 
         // This one does not have a fitting emoji
@@ -550,13 +625,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 //        return "The L";
 
       } else if (!fourthFingerIsOpen && thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
-        lastGesture=HandGesture.THUMBS;
+        lastGesture = HandGesture.THUMBS;
         return getEmoji(gestureEmojis.get(HandGesture.THUMBS)); // Barely works
-      } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen ) {
-        lastGesture=HandGesture.FIST;
+      } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) {
+        lastGesture = HandGesture.FIST;
         return getEmoji(gestureEmojis.get(HandGesture.FIST));
       } else {
-        lastGesture=HandGesture.UNDEFINED;
+        lastGesture = HandGesture.UNDEFINED;
         String info = "thumbIsOpen " + thumbIsOpen + " firstFingerIsOpen " + firstFingerIsOpen
                 + " secondFingerIsOpen " + secondFingerIsOpen +
                 " thirdFingerIsOpen " + thirdFingerIsOpen + " fourthFingerIsOpen " + fourthFingerIsOpen;
@@ -602,8 +677,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   private ImageCapture imageCapture;
 //  private VideoCapture videoCapture;
 
-  private void capturePhoto() {
-    long unixTime = System.currentTimeMillis()/1000;
+  private void capturePhoto() throws FileNotFoundException {
+    long unixTime = System.currentTimeMillis() / 1000;
     String timestamp = Long.toString(unixTime);
 
     ContentValues contentValues = new ContentValues();
@@ -617,6 +692,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                     contentValues
             ).build(),
             getExecutor(),
+
             new ImageCapture.OnImageSavedCallback() {
               @Override
               public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
@@ -627,9 +703,92 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
               public void onError(@NonNull ImageCaptureException exception) {
                 Toast.makeText(MainActivity.this, "Error saving photo: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
               }
+
             }
+
     );
 
+//    writeImage(timestamp);
   }
+
+
+  private void writeImage(String timestamp) throws FileNotFoundException {
+//    FileInputStream fs =new FileInputStream(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPath()+"/"+timestamp+".jpg");
+    Uri uri = Uri.parse("content://media/external/images/media" + "/" + timestamp + ".jpg");
+    boolean b = ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED;
+    System.out.println("-------------------------------------------------------------------");
+    System.out.println(uri);
+
+    FileInputStream fs = new FileInputStream(String.valueOf(uri));
+    Bitmap img = BitmapFactory.decodeStream(fs);
+
+    Bitmap bmp = DrawingUtils.drawTextToLeftBottom(this, img, "test", 16, Color.RED, 0, 0);
+
+    saveFile(bmp, MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPath());
+
+  }
+
+
+  public void saveFile(Bitmap bitmap, String path) {
+    final File file = new File(path);
+    SimpleDateFormat time = new SimpleDateFormat("yyyyMMddHHmmss");
+    String fileName = time.format(System.currentTimeMillis());
+    File currentFile = new File(file, fileName + ".jpg");
+    FileOutputStream fos = null;
+    try {
+      fos = new FileOutputStream(currentFile);
+      bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+      fos.flush();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        if (fos != null) {
+          fos.close();
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      Toast.makeText(MainActivity.this, "Successful"+currentFile, Toast.LENGTH_SHORT).show();
+    }
+  }
+
+
+
+  private Button _btn_map_depot;
+  private ImageView _iv;
+
+  private void assignViews() {
+    _btn_map_depot = (Button) findViewById(R.id.btn_map_depot);
+    _iv = (ImageView) findViewById(R.id.iv);
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    Bitmap bmp = null;
+    if (resultCode == RESULT_OK) {
+      Uri uri = data.getData();
+      Log.e("uri", uri.toString());
+      ContentResolver cr = this.getContentResolver();
+      try {
+        bmp = BitmapFactory.decodeStream(cr.openInputStream(uri));
+        long unixTime = System.currentTimeMillis() / 1000;
+        String timestamp = Long.toString(unixTime);
+        Bitmap bmp_save = DrawingUtils.drawTextToLeftBottom(this, bmp, "testtesttesttesttesttesttest", 20, Color.RED, 20, 20);
+        saveFile(bmp_save, MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPath());
+        /* 将Bitmap设定到ImageView */
+        _iv.setImageBitmap(bmp_save);
+      } catch (FileNotFoundException e) {
+        Log.e("Exception", e.getMessage(), e);
+      }
+
+
+    }
+    super.onActivityResult(requestCode, resultCode, data);
+  }
+
+
 
 }

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.preference.SwitchPreference
+        android:defaultValue="true"
+        android:key="example_switch"
+        android:summary="Turn this option on or off"
+        android:title="Settings option" />
+
+    <androidx.preference.MultiSelectListPreference
+        android:dialogTitle="Select the gestures to take a picture"
+        android:entries="@array/emojis"
+        android:entryValues="@array/gestures"
+        android:key="emoji_pref"
+        android:summary="Select the gestures to take a picture"
+        android:title="Gestures"
+        />
+
+
+</androidx.preference.PreferenceScreen>
+
+    <!--        android:initialExpandedChildrenCount="5"-->

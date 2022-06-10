@@ -27,6 +27,9 @@ import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.os.CountDownTimer;
 import android.provider.MediaStore;
@@ -100,6 +103,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
           HandGesture.FIST, 0x270A
   ));
 
+
   private InputSource inputSource = InputSource.UNKNOWN;
 
   // the selfie camera will be shown on start-up
@@ -129,6 +133,10 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   // Denotes activation of the counter previous to the shot
   public static boolean captureFlag=false;
 
+  // init settings screen
+  public PrefScreen prefFragment = new PrefScreen();
+
+
   private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
   @Override
@@ -137,6 +145,22 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     setContentView(R.layout.activity_main);
     Objects.requireNonNull(getSupportActionBar()).hide();
     setupLiveDemoUiComponents();
+
+  }
+
+
+
+  private void replaceFragment(Fragment fragment) {
+
+    // used to open the settings screen
+    FragmentManager supportFragmentManager = getSupportFragmentManager();
+
+    supportFragmentManager.beginTransaction()
+            .replace(android.R.id.content, fragment)
+            .setReorderingAllowed(true)
+            .addToBackStack(null)
+            .commit();
+
   }
 
   Executor getExecutor() {
@@ -173,10 +197,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     btn.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        PopupMenu popup = new PopupMenu(MainActivity.this, v);
-        popup.setOnMenuItemClickListener( MainActivity.this);
-        popup.inflate(R.menu.menu_gestures);
-        popup.show();
+
+        //TODO: hide main view
+//        PopupMenu popup = new PopupMenu(MainActivity.this, v);
+//        popup.setOnMenuItemClickListener( MainActivity.this);
+//        popup.inflate(R.menu.menu_gestures);
+//        popup.show();
+        replaceFragment(prefFragment);
       }
     });
 
@@ -286,67 +313,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     glSurfaceView.setSolutionResultRenderer(new HandsResultGlRenderer());
     glSurfaceView.setRenderInputImage(true);
 
-    TextView recognizedGesture = findViewById(R.id.recognizedGesture);
-
-    hands.setResultListener(
-
-        handsResult -> {
-
-          logWristLandmark(handsResult, /*showPixelValues=*/ false);
-
-          runOnUiThread(() -> {
-            if(!captureFlag) {
-              lastGesture=HandGesture.UNDEFINED;
-              String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
-              recognizedGesture.setText(gestureString);
-              recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
-              recognizedGesture.invalidate();
-              recognizedGesture.requestLayout();
-              recognizedGesture.bringToFront();
-              Log.i(TAG, "Camera activation ");
-
-
-              if (lastGesture == activationGesture) {
-                captureFlag=true;
-                new CountDownTimer(3000, 1000) {
-                  public void onTick(long millisUntilFinished) {
-                    timer.setVisibility(View.VISIBLE);
-//                    recognizedGesture.setVisibility(View.GONE);
-                    timer.setText(String.valueOf(1 + millisUntilFinished / 1000));
-                    timer.setTextColor(Color.parseColor("#FFFFFF"));
-                    timer.invalidate();
-                    timer.requestLayout();
-                    timer.bringToFront();
-                    counter++;
-                  }
-                  public void onFinish() {
-                    capturePhoto();
-                    counter = 0;
-                    timer.setVisibility(View.GONE);
-//                    recognizedGesture.setVisibility(View.VISIBLE);
-
-                    lastGesture=HandGesture.UNDEFINED;
-                    new CountDownTimer(2000, 1000) {
-                      public void onTick(long l) {
-                        Log.i(TAG, "extra timer is called");
-
-                      }
-                      public void onFinish() {
-                        Log.i(TAG, "extra timer is called");
-                        captureFlag=false;
-                      }
-                    }.start();
-                  }
-                }.start();
-
-              }
-            }
-          });
-
-            glSurfaceView.setRenderData(handsResult);
-            glSurfaceView.requestRender();
-        });
-
     // The runnable to start camera after the gl surface view is attached.
     // For video input source, videoInput.start() will be called when the video uri is available.
     if (inputSource == InputSource.CAMERA) {
@@ -359,6 +325,67 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     frameLayout.addView(glSurfaceView);
     glSurfaceView.setVisibility(View.VISIBLE);
     frameLayout.requestLayout();
+
+
+    TextView recognizedGesture = findViewById(R.id.recognizedGesture);
+
+    hands.setResultListener( handsResult -> {
+
+      glSurfaceView.setRenderData(handsResult);
+      glSurfaceView.requestRender();
+
+      logWristLandmark(handsResult, /*showPixelValues=*/ false);
+
+      runOnUiThread(() -> {
+        if(!captureFlag) {
+          lastGesture=HandGesture.UNDEFINED;
+          String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
+          recognizedGesture.setText(gestureString);
+          recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
+          recognizedGesture.invalidate();
+          recognizedGesture.requestLayout();
+          recognizedGesture.bringToFront();
+          Log.i(TAG, "Camera activation");
+
+
+          if (lastGesture == activationGesture) {
+            captureFlag=true;
+            new CountDownTimer(3000, 1000) {
+              public void onTick(long millisUntilFinished) {
+                timer.setVisibility(View.VISIBLE);
+//                    recognizedGesture.setVisibility(View.GONE);
+                timer.setText(String.valueOf(1 + millisUntilFinished / 1000));
+                timer.setTextColor(Color.parseColor("#FFFFFF"));
+                timer.invalidate();
+                timer.requestLayout();
+                timer.bringToFront();
+                counter++;
+              }
+              public void onFinish() {
+                capturePhoto();
+                counter = 0;
+                timer.setVisibility(View.GONE);
+//                    recognizedGesture.setVisibility(View.VISIBLE);
+
+                lastGesture=HandGesture.UNDEFINED;
+                new CountDownTimer(2000, 1000) {
+                  public void onTick(long l) {
+                    Log.i(TAG, "extra timer is called");
+
+                  }
+                  public void onFinish() {
+                    Log.i(TAG, "extra timer is called");
+                    captureFlag=false;
+                  }
+                }.start();
+              }
+            }.start();
+          }
+        }
+      });
+
+
+    });
   }
 
   private void startCamera() {

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="emojis">
+
+        <item name="VICTORY">&#x270C;</item>
+        <item name="HORNS">&#x1F918;</item>
+        <item name="LOVE">&#x1F91F;</item>
+        <item name="INDEX">&#x261D;</item>
+        <item name="OK">&#x1f44c;</item>
+        <item name="MIDDLE">&#x1f595;</item>
+        <item name="CALL">&#x1F919;</item>
+        <item name="THUMBS">&#x1F44D;</item>
+        <item name="FIST">&#x270A;</item>
+
+
+    </string-array>
+
+    <string-array name="gestures">
+
+        <item name="VICTORY">0x270C</item>
+        <item name="HORNS">0x1F918</item>
+        <item name="LOVE">0x1F91F</item>
+        <item name="INDEX">0x261D</item>
+        <item name="OK">0x1f44c</item>
+        <item name="MIDDLE">0x1f595</item>
+        <item name="CALL">0x1F919</item>
+        <item name="THUMBS">0x1F44D</item>
+        <item name="FIST">0x270A</item>
+
+    </string-array>
+
+
+</resources>

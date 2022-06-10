@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.google.mediapipe.apps.hands"
-        minSdkVersion 21
+        minSdkVersion 29
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -38,4 +38,8 @@ dependencies {
     // MediaPipe Hands Solution.
     implementation 'com.google.mediapipe:solution-core:latest.release'
     implementation 'com.google.mediapipe:hands:latest.release'
+
+    implementation 'androidx.preference:preference-ktx:1.1.1'
+    implementation 'androidx.preference:preference:1.1.1'
+
 }

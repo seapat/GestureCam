@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     // Gesture pausing between recognition and shot
     private TextView timer;
     // Emoji view for activationGesture
-    private TextView activationEmoji;
+//    private TextView activationEmoji;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ImageCapture imageCapture;
 
@@ -173,12 +173,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         });
 
         timer = (TextView) findViewById(R.id.timer);
-        activationEmoji = (TextView) findViewById(R.id.gestureEmoji);
-        activationEmoji.setVisibility(View.VISIBLE);
-        activationEmoji.setText(getEmoji(0x270C));
-        activationEmoji.invalidate();
-        activationEmoji.requestLayout();
-        activationEmoji.bringToFront();
+//        activationEmoji = (TextView) findViewById(R.id.gestureEmoji);
+//        activationEmoji.setVisibility(View.VISIBLE);
+//        activationEmoji.setText(getEmoji(0x270C));
+//        activationEmoji.invalidate();
+//        activationEmoji.requestLayout();
+//        activationEmoji.bringToFront();
 
 
         FloatingActionButton cameraFaceButton = findViewById(R.id.cameraFaceButton);
@@ -212,35 +212,35 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         switch (item.getItemId()) {
             case R.id.victory:
                 activationGesture = HandGesture.VICTORY;
-                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.VICTORY)));
+//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.VICTORY)));
                 return true;
             case R.id.index:
                 activationGesture = HandGesture.INDEX;
-                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.INDEX)));
+//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.INDEX)));
                 return true;
             case R.id.horns:
                 activationGesture = HandGesture.HORNS;
-                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.HORNS)));
+//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.HORNS)));
                 return true;
             case R.id.ok:
                 activationGesture = HandGesture.OK;
-                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.OK)));
+//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.OK)));
                 return true;
             case R.id.fist:
                 activationGesture = HandGesture.FIST;
-                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.FIST)));
+//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.FIST)));
                 return true;
             case R.id.call:
                 activationGesture = HandGesture.CALL;
-                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.CALL)));
+//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.CALL)));
                 return true;
             case R.id.love:
                 activationGesture = HandGesture.LOVE;
-                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.LOVE)));
+//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.LOVE)));
                 return true;
             case R.id.middle:
                 activationGesture = HandGesture.MIDDLE;
-                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.MIDDLE)));
+//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.MIDDLE)));
                 return true;
             default:
                 return false;

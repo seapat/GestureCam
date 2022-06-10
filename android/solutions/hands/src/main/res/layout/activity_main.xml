@@ -12,14 +12,14 @@
         android:id="@+id/recognizedGesture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="42dp"
-        android:layout_marginTop="552dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="20dp"
         android:text=""
-        android:textSize="24sp"
+        android:textSize="40sp"
         android:typeface="normal"
         android:visibility="visible"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintBottom_toTopOf="@+id/settingsButton"
+        app:layout_constraintStart_toStartOf="@+id/settingsButton" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/cameraFaceButton"
@@ -37,7 +37,7 @@
         android:id="@+id/timer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="35dp"
         android:text=""
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textSize="40sp"
@@ -58,18 +58,18 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <TextView
-        android:id="@+id/gestureEmoji"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="19dp"
-        android:text=""
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textSize="40sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/recognizedGesture"
-        app:layout_constraintStart_toStartOf="@+id/recognizedGesture" />
+<!--    <TextView-->
+<!--        android:id="@+id/gestureEmoji"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginBottom="19dp"-->
+<!--        android:text=""-->
+<!--        android:textAppearance="?android:attr/textAppearanceLarge"-->
+<!--        android:textSize="40sp"-->
+<!--        android:visibility="gone"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toStartOf="@+id/recognizedGesture"-->
+<!--        app:layout_constraintStart_toStartOf="@+id/recognizedGesture" />-->
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/takePictureButton"

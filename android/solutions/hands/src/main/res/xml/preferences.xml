@@ -5,6 +5,11 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+        <androidx.preference.Preference
+            android:selectable="false"
+            android:title=""
+            />
+
 <!--    <androidx.preference.SwitchPreference-->
 <!--        android:defaultValue="true"-->
 <!--        android:key="example_switch"-->

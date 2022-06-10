@@ -3,7 +3,7 @@
     package="com.google.mediapipe.examples.hands">
 
   <uses-sdk
-      android:minSdkVersion="21"
+      android:minSdkVersion="24"
       android:targetSdkVersion="30" />
 
   <!-- For loading images from gallery -->

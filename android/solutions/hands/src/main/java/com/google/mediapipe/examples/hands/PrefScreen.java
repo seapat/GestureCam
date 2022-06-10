@@ -8,9 +8,6 @@ import androidx.preference.MultiSelectListPreference;
 
 import androidx.preference.PreferenceFragmentCompat;
 
-import java.util.EnumMap;
-import java.util.Map;
-
 public class PrefScreen extends PreferenceFragmentCompat {
 
     @RequiresApi(api = Build.VERSION_CODES.N)

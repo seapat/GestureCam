@@ -44,6 +44,7 @@ import androidx.fragment.app.FragmentManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mediapipe.components.CameraXPreviewHelper;
+import com.google.mediapipe.formats.proto.LandmarkProto;
 import com.google.mediapipe.formats.proto.LandmarkProto.Landmark;
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmark;
 import com.google.mediapipe.solutioncore.CameraInput;
@@ -380,21 +381,23 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 glSurfaceView.getWidth(),
                 glSurfaceView.getHeight());
 
-        // required for taking pictures
-        imageCapture = new ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .build();
+    cameraProviderFuture = ProcessCameraProvider.getInstance(this);
 
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-        cameraProviderFuture.addListener(() -> {
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                startCameraHelper(cameraProvider);
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }, getExecutor());
-    }
+    // required for taking pictures
+    imageCapture = new ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .build();
+
+
+    cameraProviderFuture.addListener(() -> {
+      try {
+        ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+        startCameraHelper(cameraProvider);
+      } catch (ExecutionException | InterruptedException e) {
+        e.printStackTrace();
+      }
+    }, getExecutor());
+  }
 
     @SuppressLint("RestrictedApi")
     private void startCameraHelper(ProcessCameraProvider cameraProvider) {

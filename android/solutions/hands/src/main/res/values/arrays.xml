@@ -29,5 +29,13 @@
 
     </string-array>
 
+    <string-array name="gestures_init">
+
+        <item name="VICTORY">0x270C</item>
+        <item name="HORNS">0x1F918</item>
+        <item name="LOVE">0x1F91F</item>
+
+    </string-array>
+
 
 </resources>

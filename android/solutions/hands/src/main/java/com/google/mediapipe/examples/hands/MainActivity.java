@@ -29,7 +29,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 
 import android.os.CountDownTimer;
 import android.provider.MediaStore;
@@ -76,20 +75,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     CAMERA,
   }
 
-  // Hand Gestures supported by the app
-  private enum HandGesture{
-    VICTORY,
-    HORNS,
-    LOVE,
-    INDEX,
-    OK,
-    MIDDLE,
-    CALL,
-    THUMBS,
-    FIST,
-    UNDEFINED
-  }
-
   // Dictionary mapping icons with gestures
   private static final EnumMap<HandGesture,Integer> gestureEmojis= new EnumMap<>(Map.of(
           HandGesture.VICTORY, 0x270C,
@@ -128,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   public HandGesture lastGesture;
 
   // Activation Gesture for shot. Default VICTORY HAND
-  public HandGesture activationGesture=HandGesture.VICTORY;
+  public HandGesture activationGesture= HandGesture.VICTORY;
 
   // Denotes activation of the counter previous to the shot
   public static boolean captureFlag=false;
@@ -246,35 +231,35 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     Toast.makeText(this, "Selected gesture for shot: " +item.getTitle(), Toast.LENGTH_SHORT).show();
     switch (item.getItemId()) {
       case R.id.victory:
-        activationGesture=HandGesture.VICTORY;
+        activationGesture= HandGesture.VICTORY;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.VICTORY)));
         return true;
       case R.id.index:
-        activationGesture=HandGesture.INDEX;
+        activationGesture= HandGesture.INDEX;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.INDEX)));
         return true;
       case R.id.horns:
-        activationGesture=HandGesture.HORNS;
+        activationGesture= HandGesture.HORNS;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.HORNS)));
         return true;
       case R.id.ok:
-        activationGesture=HandGesture.OK;
+        activationGesture= HandGesture.OK;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.OK)));
         return true;
       case R.id.fist:
-        activationGesture=HandGesture.FIST;
+        activationGesture= HandGesture.FIST;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.FIST)));
         return true;
       case R.id.call:
-        activationGesture=HandGesture.CALL;
+        activationGesture= HandGesture.CALL;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.CALL)));
         return true;
       case R.id.love:
-        activationGesture=HandGesture.LOVE;
+        activationGesture= HandGesture.LOVE;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.LOVE)));
         return true;
       case R.id.middle:
-        activationGesture=HandGesture.MIDDLE;
+        activationGesture= HandGesture.MIDDLE;
         activationEmoji.setText(getEmoji(gestureEmojis.get(HandGesture.MIDDLE)));
         return true;
       default:
@@ -338,7 +323,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
       runOnUiThread(() -> {
         if(!captureFlag) {
-          lastGesture=HandGesture.UNDEFINED;
+          lastGesture= HandGesture.UNDEFINED;
           String gestureString = handGestureCalculator(handsResult.multiHandLandmarks());
           recognizedGesture.setText(gestureString);
           recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
@@ -367,7 +352,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 timer.setVisibility(View.GONE);
 //                    recognizedGesture.setVisibility(View.VISIBLE);
 
-                lastGesture=HandGesture.UNDEFINED;
+                lastGesture= HandGesture.UNDEFINED;
                 new CountDownTimer(2000, 1000) {
                   public void onTick(long l) {
                     Log.i(TAG, "extra timer is called");
@@ -549,25 +534,25 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       *  All gestures are represented by standard emojis, their strings correspond to the emoji names
       * */
       if (firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen && !thumbIsOpen) {
-        lastGesture=HandGesture.VICTORY;
+        lastGesture= HandGesture.VICTORY;
         return getEmoji(gestureEmojis.get(HandGesture.VICTORY));
       } else if (firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && !thumbIsOpen) {
-        lastGesture=HandGesture.HORNS;
+        lastGesture= HandGesture.HORNS;
         return getEmoji(gestureEmojis.get(HandGesture.HORNS));
       } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen) {
-        lastGesture=HandGesture.LOVE;
+        lastGesture= HandGesture.LOVE;
         return getEmoji(gestureEmojis.get(HandGesture.LOVE));
       } else if (!fourthFingerIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !thumbIsOpen){
-        lastGesture=HandGesture.INDEX;
+        lastGesture= HandGesture.INDEX;
         return getEmoji(gestureEmojis.get(HandGesture.INDEX));
       } else if (!firstFingerIsOpen && secondFingerIsOpen && thirdFingerIsOpen && fourthFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
-        lastGesture=HandGesture.OK;
+        lastGesture= HandGesture.OK;
         return getEmoji(gestureEmojis.get(HandGesture.OK)); // open fingers have to be stretched
       } else if (!firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) { // thumb state doesn't matter
-        lastGesture=HandGesture.MIDDLE;
+        lastGesture= HandGesture.MIDDLE;
         return getEmoji(gestureEmojis.get(HandGesture.MIDDLE));
       } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
-        lastGesture=HandGesture.CALL;
+        lastGesture= HandGesture.CALL;
         return getEmoji(gestureEmojis.get(HandGesture.CALL)); // Barely works
 
         // This one does not have a fitting emoji
@@ -575,13 +560,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 //        return "The L";
 
       } else if (!fourthFingerIsOpen && thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
-        lastGesture=HandGesture.THUMBS;
+        lastGesture= HandGesture.THUMBS;
         return getEmoji(gestureEmojis.get(HandGesture.THUMBS)); // Barely works
       } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen ) {
-        lastGesture=HandGesture.FIST;
+        lastGesture= HandGesture.FIST;
         return getEmoji(gestureEmojis.get(HandGesture.FIST));
       } else {
-        lastGesture=HandGesture.UNDEFINED;
+        lastGesture= HandGesture.UNDEFINED;
         String info = "thumbIsOpen " + thumbIsOpen + " firstFingerIsOpen " + firstFingerIsOpen
                 + " secondFingerIsOpen " + secondFingerIsOpen +
                 " thirdFingerIsOpen " + thirdFingerIsOpen + " fourthFingerIsOpen " + fourthFingerIsOpen;

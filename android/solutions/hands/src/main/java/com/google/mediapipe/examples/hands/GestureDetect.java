@@ -24,10 +24,10 @@ public class GestureDetect {
             HandGesture.FIST, 0x270A
     ));
 
-    public static String handGestureCalculator(List<LandmarkProto.NormalizedLandmarkList> multiHandLandmarks, HandGesture lastGesture) {
-        if (multiHandLandmarks.isEmpty()) {
-            return "No hand deal";
-        }
+    public static HandGesture handGestureCalculator(List<LandmarkProto.NormalizedLandmarkList> multiHandLandmarks, HandGesture lastGesture) {
+//        if (multiHandLandmarks.isEmpty()) {
+//            return "No hand deal";
+//        }
         boolean thumbIsOpen = false;
         boolean firstFingerIsOpen = false;
         boolean secondFingerIsOpen = false;
@@ -80,47 +80,47 @@ public class GestureDetect {
              *  All gestures are represented by standard emojis, their strings correspond to the emoji names
              * */
             if (firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen && !thumbIsOpen) {
-                lastGesture = HandGesture.VICTORY;
-                return getEmoji(gestureEmojis.get(HandGesture.VICTORY));
+                return HandGesture.VICTORY;
+//                return getEmoji(gestureEmojis.get(HandGesture.VICTORY));
             } else if (firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && !thumbIsOpen) {
-                lastGesture = HandGesture.HORNS;
-                return getEmoji(gestureEmojis.get(HandGesture.HORNS));
+                return HandGesture.HORNS;
+//                return getEmoji(gestureEmojis.get(HandGesture.HORNS));
             } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen) {
-                lastGesture = HandGesture.LOVE;
-                return getEmoji(gestureEmojis.get(HandGesture.LOVE));
+                return HandGesture.LOVE;
+//                return getEmoji(gestureEmojis.get(HandGesture.LOVE));
             } else if (!fourthFingerIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !thumbIsOpen) {
-                lastGesture = HandGesture.INDEX;
-                return getEmoji(gestureEmojis.get(HandGesture.INDEX));
+                return HandGesture.INDEX;
+//                return getEmoji(gestureEmojis.get(HandGesture.INDEX));
             } else if (!firstFingerIsOpen && secondFingerIsOpen && thirdFingerIsOpen && fourthFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
-                lastGesture = HandGesture.OK;
-                return getEmoji(gestureEmojis.get(HandGesture.OK)); // open fingers have to be stretched
+                return HandGesture.OK;
+//                return getEmoji(gestureEmojis.get(HandGesture.OK)); // open fingers have to be stretched
             } else if (!firstFingerIsOpen && secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) { // thumb state doesn't matter
-                lastGesture = HandGesture.MIDDLE;
-                return getEmoji(gestureEmojis.get(HandGesture.MIDDLE));
+                return HandGesture.MIDDLE;
+//                return getEmoji(gestureEmojis.get(HandGesture.MIDDLE));
             } else if (!firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && fourthFingerIsOpen && thumbIsOpen) {
-                lastGesture = HandGesture.CALL;
-                return getEmoji(gestureEmojis.get(HandGesture.CALL)); // Barely works
+                return HandGesture.CALL;
+//                return getEmoji(gestureEmojis.get(HandGesture.CALL)); // Barely works
 
                 // This one does not have a fitting emoji
 //      } else if (thumbIsOpen && firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) {
 //        return "The L";
 
             } else if (!fourthFingerIsOpen && thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && isThumbNearFirstFinger(landmarkList.get(4), landmarkList.get(8))) {
-                lastGesture = HandGesture.THUMBS;
-                return getEmoji(gestureEmojis.get(HandGesture.THUMBS)); // Barely works
+                return HandGesture.THUMBS;
+//                return getEmoji(gestureEmojis.get(HandGesture.THUMBS)); // Barely works
             } else if (!thumbIsOpen && !firstFingerIsOpen && !secondFingerIsOpen && !thirdFingerIsOpen && !fourthFingerIsOpen) {
-                lastGesture = HandGesture.FIST;
-                return getEmoji(gestureEmojis.get(HandGesture.FIST));
+                return HandGesture.FIST;
+//                return getEmoji(gestureEmojis.get(HandGesture.FIST));
             } else {
-                lastGesture = HandGesture.UNDEFINED;
+                return HandGesture.UNDEFINED;
 //                String info = "thumbIsOpen " + thumbIsOpen + " firstFingerIsOpen " + firstFingerIsOpen
 //                        + " secondFingerIsOpen " + secondFingerIsOpen +
 //                        " thirdFingerIsOpen " + thirdFingerIsOpen + " fourthFingerIsOpen " + fourthFingerIsOpen;
 //                Log.d(TAG, "handGestureCalculator: == " + info);
-                return "unrecognized gesture";
+//                return "unrecognized gesture";
             }
         }
-        return "___";
+        return HandGesture.UNDEFINED;
     }
 
     private static boolean isThumbNearFirstFinger(LandmarkProto.NormalizedLandmark point1, LandmarkProto.NormalizedLandmark point2) {

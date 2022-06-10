@@ -20,6 +20,7 @@
         android:dialogTitle="Select the gestures to take a picture"
         android:entries="@array/emojis"
         android:entryValues="@array/gestures"
+        android:defaultValue="@array/gestures_init"
         android:key="emoji_pref"
         android:summary="Select the gestures to take a picture"
         android:title="Gestures"

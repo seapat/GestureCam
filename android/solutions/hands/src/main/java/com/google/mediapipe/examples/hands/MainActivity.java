@@ -16,12 +16,13 @@ package com.google.mediapipe.examples.hands;
 
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -36,7 +37,6 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -44,7 +44,6 @@ import androidx.fragment.app.FragmentManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mediapipe.components.CameraXPreviewHelper;
-import com.google.mediapipe.formats.proto.LandmarkProto;
 import com.google.mediapipe.formats.proto.LandmarkProto.Landmark;
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmark;
 import com.google.mediapipe.solutioncore.CameraInput;
@@ -55,10 +54,9 @@ import com.google.mediapipe.solutions.hands.HandsOptions;
 import com.google.mediapipe.solutions.hands.HandsResult;
 
 import java.lang.reflect.Field;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
@@ -162,18 +160,15 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
      */
     private void setupLiveDemoUiComponents() {
 
-        FloatingActionButton btn = findViewById(R.id.gestureButton);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        FloatingActionButton btn = findViewById(R.id.settingsButton);
+        btn.setOnClickListener(v -> {
 
-                //TODO: hide main view
+            //TODO: hide main view
 //        PopupMenu popup = new PopupMenu(MainActivity.this, v);
 //        popup.setOnMenuItemClickListener( MainActivity.this);
 //        popup.inflate(R.menu.menu_gestures);
 //        popup.show();
-                replaceFragment(prefFragment);
-            }
+            replaceFragment(prefFragment);
         });
 
         timer = (TextView) findViewById(R.id.timer);
@@ -291,16 +286,11 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         }
 
         // Updates the preview layout.
-//        LayoutInflater li = LayoutInflater.from(this);
-//        ConstraintLayout constraintLayout = (ConstraintLayout) li.inflate(R.layout.activity_main,null);
         FrameLayout constraintLayout = findViewById(R.id.preview_display_layout);
         constraintLayout.removeAllViewsInLayout();
         constraintLayout.addView(glSurfaceView);
         glSurfaceView.setVisibility(View.VISIBLE);
         constraintLayout.requestLayout();
-
-
-//        TextView recognizedGesture = findViewById(R.id.recognizedGesture);
 
         hands.setResultListener(handsResult -> {
 
@@ -314,16 +304,33 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             runOnUiThread(() -> {
                 if (!captureFlag) {
                     lastGesture = HandGesture.UNDEFINED;
-                    String gestureString = GestureDetect.handGestureCalculator(handsResult.multiHandLandmarks(), lastGesture);
-                    recognizedGesture.setText(gestureString);
+                    lastGesture = GestureDetect.handGestureCalculator(handsResult.multiHandLandmarks(), lastGesture);
+                    try {
+                        recognizedGesture.setText(getEmoji(GestureDetect.gestureEmojis.get(lastGesture)));
+
+                    } catch (Exception e) {
+                        recognizedGesture.setText("");
+                        e.printStackTrace();
+                    }
+
                     recognizedGesture.setTextColor(Color.parseColor("#FFFFFF"));
                     recognizedGesture.invalidate();
                     recognizedGesture.requestLayout();
                     recognizedGesture.bringToFront();
                     Log.i(TAG, "Camera activation");
 
+                    SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+                    Set<String> selectedGesturesHex = sharedPrefs.getStringSet("emoji_pref", null);
+                    Set<Integer> selectedGesturesInt = new HashSet<>();
+                    try {
+                        selectedGesturesHex.forEach(x -> selectedGesturesInt.add(
+                                Integer.parseInt(x.replaceFirst("0x", ""), 16)));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
-                    if (lastGesture == activationGesture) {
+
+                    if (selectedGesturesInt.contains(GestureDetect.gestureEmojis.get(lastGesture))) {
                         captureFlag = true;
                         new CountDownTimer(3000, 1000) {
                             public void onTick(long millisUntilFinished) {

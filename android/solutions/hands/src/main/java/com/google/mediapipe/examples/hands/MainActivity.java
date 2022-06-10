@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -35,6 +36,7 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -99,16 +101,27 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Objects.requireNonNull(getSupportActionBar()).hide();
+
         setupLiveDemoUiComponents();
 
     }
 
+    @Override
+    public void onBackPressed() {
+        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+            findViewById(R.id.ParentLayout).setVisibility(View.VISIBLE);
+            getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        } else {
+            super.onBackPressed();
+        }
+    }
 
     private void replaceFragment(Fragment fragment) {
 
+        findViewById(R.id.ParentLayout).setVisibility(View.GONE);
+
         // used to open the settings screen
         FragmentManager supportFragmentManager = getSupportFragmentManager();
-
         supportFragmentManager.beginTransaction()
                 .replace(android.R.id.content, fragment)
                 .setReorderingAllowed(true)
@@ -278,16 +291,20 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         }
 
         // Updates the preview layout.
-        FrameLayout frameLayout = findViewById(R.id.preview_display_layout);
-        frameLayout.removeAllViewsInLayout();
-        frameLayout.addView(glSurfaceView);
+//        LayoutInflater li = LayoutInflater.from(this);
+//        ConstraintLayout constraintLayout = (ConstraintLayout) li.inflate(R.layout.activity_main,null);
+        FrameLayout constraintLayout = findViewById(R.id.preview_display_layout);
+        constraintLayout.removeAllViewsInLayout();
+        constraintLayout.addView(glSurfaceView);
         glSurfaceView.setVisibility(View.VISIBLE);
-        frameLayout.requestLayout();
+        constraintLayout.requestLayout();
 
 
-        TextView recognizedGesture = findViewById(R.id.recognizedGesture);
+//        TextView recognizedGesture = findViewById(R.id.recognizedGesture);
 
         hands.setResultListener(handsResult -> {
+
+            TextView recognizedGesture = findViewById(R.id.recognizedGesture);
 
             glSurfaceView.setRenderData(handsResult);
             glSurfaceView.requestRender();

@@ -14,7 +14,6 @@
 
 package com.google.mediapipe.examples.hands;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -44,7 +43,6 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -80,7 +78,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private static final String TAG = "MainActivity";
     // Run the pipeline and the model inference on GPU or CPU.
     private static final boolean RUN_ON_GPU = true;
-
     // Denotes activation of the counter previous to the shot
     public static boolean captureFlag = false;
     // Counter var for previous to the shot
@@ -101,8 +98,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private SolutionGlSurfaceView<HandsResult> glSurfaceView;
     // Gesture pausing between recognition and shot
     private TextView timer;
-    // Emoji view for activationGesture
-//    private TextView activationEmoji;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ImageCapture imageCapture;
 
@@ -147,15 +142,17 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     _btn_map_depot.setOnClickListener(new Button.OnClickListener() {
       @Override
       public void onClick(View v) {
-        Intent intent = new Intent();
-        /* 开启Pictures画面Type设定为image */
-        intent.setType("image/*");
-        /* 使用Intent.ACTION_GET_CONTENT这个Action */
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        /* 取得相片后返回本画面 */
-        startActivityForResult(intent, 1);
-        _btn_save_img.setVisibility(View.VISIBLE);
-        _btn_save_cen.setVisibility(View.VISIBLE);
+          if(!captureFlag) {
+              Intent intent = new Intent();
+              /* 开启Pictures画面Type设定为image */
+              intent.setType("image/*");
+              /* 使用Intent.ACTION_GET_CONTENT这个Action */
+              intent.setAction(Intent.ACTION_GET_CONTENT);
+              /* 取得相片后返回本画面 */
+              startActivityForResult(intent, 1);
+              _btn_save_img.setVisibility(View.VISIBLE);
+              _btn_save_cen.setVisibility(View.VISIBLE);
+          }
       }
     });
 
@@ -223,6 +220,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       btn.setOnClickListener(new View.OnClickListener() {
           @Override
           public void onClick(View v) {
+              if(!captureFlag)
               replaceFragment(prefFragment);
           }
       });
@@ -261,35 +259,24 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         switch (item.getItemId()) {
             case R.id.victory:
                 activationGesture = HandGesture.VICTORY;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.VICTORY)));
                 return true;
             case R.id.index:
                 activationGesture = HandGesture.INDEX;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.INDEX)));
                 return true;
             case R.id.horns:
                 activationGesture = HandGesture.HORNS;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.HORNS)));
                 return true;
             case R.id.ok:
                 activationGesture = HandGesture.OK;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.OK)));
                 return true;
             case R.id.fist:
                 activationGesture = HandGesture.FIST;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.FIST)));
-                return true;
-            case R.id.call:
-                activationGesture = HandGesture.CALL;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.CALL)));
                 return true;
             case R.id.love:
                 activationGesture = HandGesture.LOVE;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.LOVE)));
                 return true;
             case R.id.middle:
                 activationGesture = HandGesture.MIDDLE;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.MIDDLE)));
                 return true;
             default:
                 return false;
@@ -385,7 +372,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                         new CountDownTimer(3000, 1000) {
                             public void onTick(long millisUntilFinished) {
                                 timer.setVisibility(View.VISIBLE);
-//                    recognizedGesture.setVisibility(View.GONE);
                                 timer.setText(String.valueOf(1 + millisUntilFinished / 1000));
                                 timer.setTextColor(Color.parseColor("#FFFFFF"));
                                 timer.invalidate();
@@ -398,8 +384,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                                 capturePhoto();
                                 counter = 0;
                                 timer.setVisibility(View.GONE);
-//                    recognizedGesture.setVisibility(View.VISIBLE);
-
                                 lastGesture = HandGesture.UNDEFINED;
                                 new CountDownTimer(2000, 1000) {
                                     public void onTick(long l) {
@@ -529,8 +513,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     //// CAMERA: TAKE PICTURE ////
     /////////////////////////////
 
-    //  private VideoCapture videoCapture;
-
 
     private enum InputSource {
         UNKNOWN,
@@ -598,7 +580,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       ContentResolver cr = this.getContentResolver();
       try {
         bmp = BitmapFactory.decodeStream(cr.openInputStream(uri));
-        bmp = adjustPhotoRotation(bmp, -90);
+        bmp = adjustPhotoRotation(bmp, 0);
         Bitmap bmp_save = DrawingUtils.drawTextToLeftBottom(this, bmp, curGesture, 40, Color.RED, 20, 20);
         /* 将Bitmap设定到ImageView */
         _iv.setImageBitmap(bmp_save);

@@ -12,7 +12,7 @@
         android:id="@+id/recognizedGesture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="10dp"
         android:layout_marginBottom="20dp"
         android:text=""
         android:textSize="40sp"
@@ -58,19 +58,6 @@
         app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
-
-    <!--    <TextView-->
-    <!--        android:id="@+id/gestureEmoji"-->
-    <!--        android:layout_width="wrap_content"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:layout_marginBottom="19dp"-->
-    <!--        android:text=""-->
-    <!--        android:textAppearance="?android:attr/textAppearanceLarge"-->
-    <!--        android:textSize="40sp"-->
-    <!--        android:visibility="gone"-->
-    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
-    <!--        app:layout_constraintEnd_toStartOf="@+id/recognizedGesture"-->
-    <!--        app:layout_constraintStart_toStartOf="@+id/recognizedGesture" />-->
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/takePictureButton"

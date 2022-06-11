@@ -106,6 +106,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ImageCapture imageCapture;
 
+    private String curGesture = HandGesture.UNDEFINED.toString();
+
 
     @Override
     public void onBackPressed() {
@@ -163,6 +165,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         _iv.setImageBitmap(null);
         _btn_save_img.setVisibility(View.INVISIBLE);
         _btn_save_cen.setVisibility(View.INVISIBLE);
+        _btn_map_depot.setVisibility(View.VISIBLE);
 
         long unixTime = System.currentTimeMillis() / 1000;
         String timestamp = Long.toString(unixTime);
@@ -178,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             _iv.setImageBitmap(null);
             _btn_save_img.setVisibility(View.INVISIBLE);
             _btn_save_cen.setVisibility(View.INVISIBLE);
+            _btn_map_depot.setVisibility(View.VISIBLE);
         }
     });
   }
@@ -351,7 +355,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                     lastGesture = GestureDetect.handGestureCalculator(handsResult.multiHandLandmarks(), lastGesture);
                     try {
                         recognizedGesture.setText(getEmoji(GestureDetect.gestureEmojis.get(lastGesture)));
-
+                        curGesture = (String) recognizedGesture.getText();
                     } catch (Exception e) {
                         recognizedGesture.setText("");
                         e.printStackTrace();
@@ -585,11 +589,11 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
       try {
         bmp = BitmapFactory.decodeStream(cr.openInputStream(uri));
         bmp = adjustPhotoRotation(bmp, -90);
-        Bitmap bmp_save = DrawingUtils.drawTextToLeftBottom(this, bmp, getEmoji(GestureDetect.gestureEmojis.get(activationGesture)), 40, Color.RED, 20, 20);
+        Bitmap bmp_save = DrawingUtils.drawTextToLeftBottom(this, bmp, curGesture, 40, Color.RED, 20, 20);
         /* 将Bitmap设定到ImageView */
         _iv.setImageBitmap(bmp_save);
         this.bmp_save = bmp_save;
-
+        _btn_map_depot.setVisibility(View.INVISIBLE);
       } catch (FileNotFoundException e) {
         Log.e("Exception", e.getMessage(), e);
       }

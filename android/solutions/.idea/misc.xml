@@ -12,6 +12,8 @@
         <entry key="hands/src/main/res/layout/switch_item.xml" value="0.33697916666666666" />
         <entry key="hands/src/main/res/menu/menu_gestures.xml" value="0.536" />
         <entry key="hands/src/main/res/xml/preferences.xml" value="0.536" />
+        <entry key="hands/src/main/res/layout/activity_draw.xml" value="0.15416666666666667" />
+        <entry key="hands/src/main/res/layout/activity_main.xml" value="0.1857696533203126" />
       </map>
     </option>
   </component>

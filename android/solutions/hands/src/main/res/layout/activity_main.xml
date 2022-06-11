@@ -12,7 +12,7 @@
         android:id="@+id/recognizedGesture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="12dp"
         android:layout_marginBottom="20dp"
         android:text=""
         android:textSize="40sp"
@@ -26,11 +26,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="19dp"
+        android:layout_marginBottom="60dp"
         android:contentDescription="@string/flipcameraface"
         android:src="@android:drawable/ic_popup_sync"
         app:fabSize="normal"
-        app:layout_constraintBottom_toTopOf="@+id/takePictureButton"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
@@ -51,37 +51,37 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="60dp"
         android:contentDescription="@string/gesture_selection"
         android:src="@android:drawable/ic_menu_help"
         app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-<!--    <TextView-->
-<!--        android:id="@+id/gestureEmoji"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginBottom="19dp"-->
-<!--        android:text=""-->
-<!--        android:textAppearance="?android:attr/textAppearanceLarge"-->
-<!--        android:textSize="40sp"-->
-<!--        android:visibility="gone"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toStartOf="@+id/recognizedGesture"-->
-<!--        app:layout_constraintStart_toStartOf="@+id/recognizedGesture" />-->
+    <!--    <TextView-->
+    <!--        android:id="@+id/gestureEmoji"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:layout_marginBottom="19dp"-->
+    <!--        android:text=""-->
+    <!--        android:textAppearance="?android:attr/textAppearanceLarge"-->
+    <!--        android:textSize="40sp"-->
+    <!--        android:visibility="gone"-->
+    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--        app:layout_constraintEnd_toStartOf="@+id/recognizedGesture"-->
+    <!--        app:layout_constraintStart_toStartOf="@+id/recognizedGesture" />-->
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/takePictureButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="60dp"
         android:contentDescription="@string/takes_pictures"
         android:src="@android:drawable/ic_menu_camera"
         app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <FrameLayout
         android:id="@+id/preview_display_layout"
@@ -92,7 +92,38 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <ImageView
+            android:id="@+id/iv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="visible" />
     </FrameLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btn_map_depot"
+            android:layout_width="178dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center"
+            android:layout_marginTop="35dp"
+            android:text="Open the Gallery" />
+
+        <Button
+            android:id="@+id/btn_save_img"
+            android:layout_width="178dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center"
+            android:layout_marginTop="5dp"
+            android:text="Save"
+            android:visibility="invisible" />
+
+
+    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -153,20 +153,32 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         /* 取得相片后返回本画面 */
         startActivityForResult(intent, 1);
         _btn_save_img.setVisibility(View.VISIBLE);
+        _btn_save_cen.setVisibility(View.VISIBLE);
       }
     });
 
     _btn_save_img.setOnClickListener(new Button.OnClickListener() {
       @Override
       public void onClick(View v) {
-        _iv.setVisibility(View.INVISIBLE);
+        _iv.setImageBitmap(null);
         _btn_save_img.setVisibility(View.INVISIBLE);
+        _btn_save_cen.setVisibility(View.INVISIBLE);
 
         long unixTime = System.currentTimeMillis() / 1000;
         String timestamp = Long.toString(unixTime);
         MediaStore.Images.Media.insertImage(getContentResolver(), bmp_save, timestamp, "description");
         Toast.makeText(MainActivity.this, "Photo has been saved successfully to " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPath(), Toast.LENGTH_SHORT).show();
       }
+    });
+
+    _btn_save_cen.setOnClickListener(new Button.OnClickListener(){
+
+        @Override
+        public void onClick(View view) {
+            _iv.setImageBitmap(null);
+            _btn_save_img.setVisibility(View.INVISIBLE);
+            _btn_save_cen.setVisibility(View.INVISIBLE);
+        }
     });
   }
 
@@ -554,12 +566,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   private Button _btn_map_depot;
   private ImageView _iv;
   private Button _btn_save_img;
+  private Button _btn_save_cen;
 
   private void assignViews() {
-    View view = this.getLayoutInflater().inflate((R.layout.activity_main), null);
     _btn_map_depot = (Button) findViewById(R.id.btn_map_depot);
-    _iv = (ImageView) view.findViewById(R.id.iv);
+    _iv = (ImageView) findViewById(R.id.iv);
     _btn_save_img = (Button) findViewById(R.id.btn_save_img);
+    _btn_save_cen = (Button) findViewById(R.id.btn_save_cen);
   }
 
   @Override

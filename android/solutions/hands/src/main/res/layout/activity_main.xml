@@ -46,6 +46,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/settingsButton"
         android:layout_width="wrap_content"
@@ -92,11 +93,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/iv"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="visible" />
     </FrameLayout>
 
 
@@ -107,21 +103,52 @@
 
         <Button
             android:id="@+id/btn_map_depot"
-            android:layout_width="178dp"
+            android:layout_width="230dp"
             android:layout_height="wrap_content"
             android:layout_gravity="top|center"
             android:layout_marginTop="35dp"
             android:text="Open the Gallery" />
 
-        <Button
-            android:id="@+id/btn_save_img"
-            android:layout_width="178dp"
+        <LinearLayout
+            android:layout_width="230dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="top|center"
-            android:layout_marginTop="5dp"
-            android:text="Save"
-            android:visibility="invisible" />
+            android:layout_gravity="top|center">
+            <Button
+                android:id="@+id/btn_save_img"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center"
+                android:layout_marginTop="5dp"
+                android:text="Save"
+                android:layout_weight="1"
+                android:visibility="invisible" />
 
+            <Button
+                android:id="@+id/btn_save_cen"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center"
+                android:layout_marginTop="5dp"
+                android:text="Cancel"
+                android:layout_weight="1"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <ImageView
+                android:id="@+id/iv"
+                android:layout_width="230dp"
+                android:layout_height="340dp"
+                android:layout_gravity="top|center"
+                android:layout_marginTop="40dp"
+                android:scaleType="fitStart"
+                android:visibility="visible" />
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -568,7 +568,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     Bitmap bmp = null;
       if(data == null){
-          _btn_map_depot.setVisibility(View.VISIBLE);
+          _btn_map_depot.setVisibility(View.INVISIBLE);
           _btn_save_cen.setVisibility(View.INVISIBLE);
           _btn_save_img.setVisibility(View.INVISIBLE);
           captureFlag = false;

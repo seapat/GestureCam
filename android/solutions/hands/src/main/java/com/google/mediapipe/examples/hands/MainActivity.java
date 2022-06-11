@@ -15,9 +15,15 @@
 package com.google.mediapipe.examples.hands;
 
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
@@ -40,11 +46,13 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import android.widget.Button;
+import android.widget.ImageView;
 
+// ContentResolver dependency
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mediapipe.components.CameraXPreviewHelper;
-import com.google.mediapipe.formats.proto.LandmarkProto;
 import com.google.mediapipe.formats.proto.LandmarkProto.Landmark;
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmark;
 import com.google.mediapipe.solutioncore.CameraInput;
@@ -54,6 +62,7 @@ import com.google.mediapipe.solutions.hands.Hands;
 import com.google.mediapipe.solutions.hands.HandsOptions;
 import com.google.mediapipe.solutions.hands.HandsResult;
 
+import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Objects;
@@ -69,7 +78,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private static final String TAG = "MainActivity";
     // Run the pipeline and the model inference on GPU or CPU.
     private static final boolean RUN_ON_GPU = true;
-
     // Denotes activation of the counter previous to the shot
     public static boolean captureFlag = false;
     // Counter var for previous to the shot
@@ -90,20 +98,11 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private SolutionGlSurfaceView<HandsResult> glSurfaceView;
     // Gesture pausing between recognition and shot
     private TextView timer;
-    // Emoji view for activationGesture
-//    private TextView activationEmoji;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ImageCapture imageCapture;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        Objects.requireNonNull(getSupportActionBar()).hide();
+    private String curGesture = HandGesture.UNDEFINED.toString();
 
-        setupLiveDemoUiComponents();
-
-    }
 
     @Override
     public void onBackPressed() {
@@ -119,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
         findViewById(R.id.ParentLayout).setVisibility(View.GONE);
 
+
         // used to open the settings screen
         FragmentManager supportFragmentManager = getSupportFragmentManager();
         supportFragmentManager.beginTransaction()
@@ -128,6 +128,62 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 .commit();
 
     }
+  private Bitmap bmp_save = null;
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    Objects.requireNonNull(getSupportActionBar()).hide();
+    setupLiveDemoUiComponents();
+
+    assignViews();
+
+    _btn_map_depot.setOnClickListener(new Button.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+          if(!captureFlag) {
+              Intent intent = new Intent();
+              /* 开启Pictures画面Type设定为image */
+              intent.setType("image/*");
+              /* 使用Intent.ACTION_GET_CONTENT这个Action */
+              intent.setAction(Intent.ACTION_GET_CONTENT);
+              /* 取得相片后返回本画面 */
+              startActivityForResult(intent, 1);
+              _btn_save_img.setVisibility(View.VISIBLE);
+              _btn_save_cen.setVisibility(View.VISIBLE);
+          }
+      }
+    });
+
+    _btn_save_img.setOnClickListener(new Button.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        _iv.setImageBitmap(null);
+        _btn_save_img.setVisibility(View.INVISIBLE);
+        _btn_save_cen.setVisibility(View.INVISIBLE);
+        _btn_map_depot.setVisibility(View.INVISIBLE);
+        captureFlag = false;
+
+        long unixTime = System.currentTimeMillis() / 1000;
+        String timestamp = Long.toString(unixTime);
+        MediaStore.Images.Media.insertImage(getContentResolver(), bmp_save, timestamp, "description");
+        Toast.makeText(MainActivity.this, "Photo has been saved successfully to " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPath(), Toast.LENGTH_SHORT).show();
+      }
+    });
+
+    _btn_save_cen.setOnClickListener(new Button.OnClickListener(){
+
+        @Override
+        public void onClick(View view) {
+            _iv.setImageBitmap(null);
+            _btn_save_img.setVisibility(View.INVISIBLE);
+            _btn_save_cen.setVisibility(View.INVISIBLE);
+            _btn_map_depot.setVisibility(View.INVISIBLE);
+            captureFlag = false;
+        }
+    });
+  }
 
     Executor getExecutor() {
         return ContextCompat.getMainExecutor(this);
@@ -156,51 +212,42 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         }
     }
 
-    /**
-     * Sets up the UI components for the live demo with camera input.
-     */
-    private void setupLiveDemoUiComponents() {
 
-        FloatingActionButton btn = findViewById(R.id.settingsButton);
-        btn.setOnClickListener(v -> {
+  /** Sets up the UI components for the live demo with camera input. */
+  private void setupLiveDemoUiComponents() {
 
-            //TODO: hide main view
-//        PopupMenu popup = new PopupMenu(MainActivity.this, v);
-//        popup.setOnMenuItemClickListener( MainActivity.this);
-//        popup.inflate(R.menu.menu_gestures);
-//        popup.show();
-            replaceFragment(prefFragment);
-        });
+      FloatingActionButton btn = findViewById(R.id.settingsButton);
+      btn.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+              if(!captureFlag)
+              replaceFragment(prefFragment);
+          }
+      });
 
-        timer = (TextView) findViewById(R.id.timer);
-//        activationEmoji = (TextView) findViewById(R.id.gestureEmoji);
-//        activationEmoji.setVisibility(View.VISIBLE);
-//        activationEmoji.setText(getEmoji(0x270C));
-//        activationEmoji.invalidate();
-//        activationEmoji.requestLayout();
-//        activationEmoji.bringToFront();
+      timer = (TextView) findViewById(R.id.timer);
 
 
-        FloatingActionButton cameraFaceButton = findViewById(R.id.cameraFaceButton);
-        cameraFaceButton.setOnClickListener(
-                v -> {
-                    if (cameraFaceMediapipe == CameraInput.CameraFacing.FRONT) {
-                        cameraFaceMediapipe = CameraInput.CameraFacing.BACK;
-                        cameraFaceCameraX = CameraSelector.LENS_FACING_BACK;
-                    } else {
-                        cameraFaceMediapipe = CameraInput.CameraFacing.FRONT;
-                        cameraFaceCameraX = CameraSelector.LENS_FACING_FRONT;
-                    }
-                    cameraInput.close();
-                    this.onResume();
-                });
+      FloatingActionButton cameraFaceButton = findViewById(R.id.cameraFaceButton);
+      cameraFaceButton.setOnClickListener(
+              v -> {
+                  if (cameraFaceMediapipe == CameraInput.CameraFacing.FRONT) {
+                      cameraFaceMediapipe = CameraInput.CameraFacing.BACK;
+                      cameraFaceCameraX = CameraSelector.LENS_FACING_BACK;
+                  } else {
+                      cameraFaceMediapipe = CameraInput.CameraFacing.FRONT;
+                      cameraFaceCameraX = CameraSelector.LENS_FACING_FRONT;
+                  }
+                  cameraInput.close();
+                  this.onResume();
+              });
 
-        FloatingActionButton takePictureButton = findViewById(R.id.takePictureButton);
-        takePictureButton.setOnClickListener(button -> capturePhoto());
+      FloatingActionButton takePictureButton = findViewById(R.id.takePictureButton);
+      takePictureButton.setOnClickListener(button -> capturePhoto());
 
-        stopCurrentPipeline();
-        setupStreamingModePipeline(InputSource.CAMERA);
-    }
+      stopCurrentPipeline();
+      setupStreamingModePipeline(InputSource.CAMERA);
+  }
 
     ///////////////////////////////
     //// SETTINGS: GESTURE SELECTION ////
@@ -212,35 +259,24 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         switch (item.getItemId()) {
             case R.id.victory:
                 activationGesture = HandGesture.VICTORY;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.VICTORY)));
                 return true;
             case R.id.index:
                 activationGesture = HandGesture.INDEX;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.INDEX)));
                 return true;
             case R.id.horns:
                 activationGesture = HandGesture.HORNS;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.HORNS)));
                 return true;
             case R.id.ok:
                 activationGesture = HandGesture.OK;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.OK)));
                 return true;
             case R.id.fist:
                 activationGesture = HandGesture.FIST;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.FIST)));
-                return true;
-            case R.id.call:
-                activationGesture = HandGesture.CALL;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.CALL)));
                 return true;
             case R.id.love:
                 activationGesture = HandGesture.LOVE;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.LOVE)));
                 return true;
             case R.id.middle:
                 activationGesture = HandGesture.MIDDLE;
-//                activationEmoji.setText(getEmoji(GestureDetect.gestureEmojis.get(HandGesture.MIDDLE)));
                 return true;
             default:
                 return false;
@@ -308,7 +344,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                     lastGesture = GestureDetect.handGestureCalculator(handsResult.multiHandLandmarks(), lastGesture);
                     try {
                         recognizedGesture.setText(getEmoji(GestureDetect.gestureEmojis.get(lastGesture)));
-
+                        curGesture = (String) recognizedGesture.getText();
                     } catch (Exception e) {
                         recognizedGesture.setText("");
                         e.printStackTrace();
@@ -336,7 +372,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                         new CountDownTimer(3000, 1000) {
                             public void onTick(long millisUntilFinished) {
                                 timer.setVisibility(View.VISIBLE);
-//                    recognizedGesture.setVisibility(View.GONE);
                                 timer.setText(String.valueOf(1 + millisUntilFinished / 1000));
                                 timer.setTextColor(Color.parseColor("#FFFFFF"));
                                 timer.invalidate();
@@ -349,8 +384,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                                 capturePhoto();
                                 counter = 0;
                                 timer.setVisibility(View.GONE);
-//                    recognizedGesture.setVisibility(View.VISIBLE);
-
                                 lastGesture = HandGesture.UNDEFINED;
                                 new CountDownTimer(2000, 1000) {
                                     public void onTick(long l) {
@@ -473,47 +506,106 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                         "MediaPipe Hand wrist world coordinates (in meters with the origin at the hand's"
                                 + " approximate geometric center): x=%f m, y=%f m, z=%f m",
                         wristWorldLandmark.getX(), wristWorldLandmark.getY(), wristWorldLandmark.getZ()));
-    }
+      }
 
 
     ///////////////////////////////
     //// CAMERA: TAKE PICTURE ////
     /////////////////////////////
 
-    private void capturePhoto() {
-        long unixTime = System.currentTimeMillis() / 1000;
-        String timestamp = Long.toString(unixTime);
-
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, timestamp);
-        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-
-        imageCapture.takePicture(
-                new ImageCapture.OutputFileOptions.Builder(
-                        getContentResolver(),
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        contentValues
-                ).build(),
-                getExecutor(),
-                new ImageCapture.OnImageSavedCallback() {
-                    @Override
-                    public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                        Toast.makeText(MainActivity.this, "Photo has been saved successfully to " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPath(), Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onError(@NonNull ImageCaptureException exception) {
-                        Toast.makeText(MainActivity.this, "Error saving photo: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-
-    }
-//  private VideoCapture videoCapture;
 
     private enum InputSource {
         UNKNOWN,
         CAMERA,
     }
+
+  private void capturePhoto() {
+    long unixTime = System.currentTimeMillis()/1000;
+    String timestamp = Long.toString(unixTime);
+
+    ContentValues contentValues = new ContentValues();
+    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, timestamp);
+    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+    _btn_map_depot.setVisibility(View.VISIBLE);
+
+    imageCapture.takePicture(
+            new ImageCapture.OutputFileOptions.Builder(
+                    getContentResolver(),
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    contentValues
+            ).build(),
+            getExecutor(),
+            new ImageCapture.OnImageSavedCallback() {
+              @Override
+              public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+                Toast.makeText(MainActivity.this, "Photo has been saved successfully to " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPath(), Toast.LENGTH_SHORT).show();
+              }
+
+              @Override
+              public void onError(@NonNull ImageCaptureException exception) {
+                Toast.makeText(MainActivity.this, "Error saving photo: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+              }
+
+            }
+
+    );
+  }
+
+
+  private Button _btn_map_depot;
+  private ImageView _iv;
+  private Button _btn_save_img;
+  private Button _btn_save_cen;
+
+  private void assignViews() {
+    _btn_map_depot = (Button) findViewById(R.id.btn_map_depot);
+    _iv = (ImageView) findViewById(R.id.iv);
+    _btn_save_img = (Button) findViewById(R.id.btn_save_img);
+    _btn_save_cen = (Button) findViewById(R.id.btn_save_cen);
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    Bitmap bmp = null;
+      if(data == null){
+          _btn_map_depot.setVisibility(View.VISIBLE);
+          _btn_save_cen.setVisibility(View.INVISIBLE);
+          _btn_save_img.setVisibility(View.INVISIBLE);
+          captureFlag = false;
+          return;
+      }
+    if (resultCode == RESULT_OK) {
+      Uri uri = data.getData();
+      Log.e("uri", uri.toString());
+      ContentResolver cr = this.getContentResolver();
+      try {
+        bmp = BitmapFactory.decodeStream(cr.openInputStream(uri));
+        bmp = adjustPhotoRotation(bmp, 0);
+        Bitmap bmp_save = DrawingUtils.drawTextToLeftBottom(this, bmp, curGesture, 40, Color.RED, 20, 20);
+        /* 将Bitmap设定到ImageView */
+        _iv.setImageBitmap(bmp_save);
+        this.bmp_save = bmp_save;
+        _btn_map_depot.setVisibility(View.INVISIBLE);
+        captureFlag = true;
+      } catch (FileNotFoundException e) {
+        Log.e("Exception", e.getMessage(), e);
+      }
+
+
+    }
+    super.onActivityResult(requestCode, resultCode, data);
+  }
+
+  Bitmap adjustPhotoRotation(Bitmap bm, final int orientationDegree) {
+    Matrix m = new Matrix();
+    m.setRotate(orientationDegree, (float) bm.getWidth() / 2, (float) bm.getHeight() / 2);
+    try {
+      Bitmap bm1 = Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), m, true);
+      return bm1;
+    } catch (OutOfMemoryError ex) {
+    }
+    return null;
+
+  }
 
 }

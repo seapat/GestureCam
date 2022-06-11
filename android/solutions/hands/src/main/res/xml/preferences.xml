@@ -10,11 +10,6 @@
             android:title=""
             />
 
-<!--    <androidx.preference.SwitchPreference-->
-<!--        android:defaultValue="true"-->
-<!--        android:key="example_switch"-->
-<!--        android:summary="Turn this option on or off"-->
-<!--        android:title="Settings option" />-->
 
     <androidx.preference.MultiSelectListPreference
         android:dialogTitle="Select the gestures to take a picture"

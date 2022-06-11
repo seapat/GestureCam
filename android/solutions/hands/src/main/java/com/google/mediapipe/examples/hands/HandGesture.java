@@ -9,8 +9,6 @@ public enum HandGesture {
         INDEX,
         OK,
         MIDDLE,
-        CALL,
-        THUMBS,
         FIST,
         UNDEFINED
     }

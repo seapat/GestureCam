@@ -165,7 +165,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         _iv.setImageBitmap(null);
         _btn_save_img.setVisibility(View.INVISIBLE);
         _btn_save_cen.setVisibility(View.INVISIBLE);
-        _btn_map_depot.setVisibility(View.VISIBLE);
+        _btn_map_depot.setVisibility(View.INVISIBLE);
+        captureFlag = false;
 
         long unixTime = System.currentTimeMillis() / 1000;
         String timestamp = Long.toString(unixTime);
@@ -181,7 +182,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             _iv.setImageBitmap(null);
             _btn_save_img.setVisibility(View.INVISIBLE);
             _btn_save_cen.setVisibility(View.INVISIBLE);
-            _btn_map_depot.setVisibility(View.VISIBLE);
+            _btn_map_depot.setVisibility(View.INVISIBLE);
+            captureFlag = false;
         }
     });
   }
@@ -542,6 +544,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     ContentValues contentValues = new ContentValues();
     contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, timestamp);
     contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+    _btn_map_depot.setVisibility(View.VISIBLE);
 
     imageCapture.takePicture(
             new ImageCapture.OutputFileOptions.Builder(
@@ -582,6 +585,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     Bitmap bmp = null;
+      if(data == null){
+          _btn_map_depot.setVisibility(View.VISIBLE);
+          _btn_save_cen.setVisibility(View.INVISIBLE);
+          _btn_save_img.setVisibility(View.INVISIBLE);
+          captureFlag = false;
+          return;
+      }
     if (resultCode == RESULT_OK) {
       Uri uri = data.getData();
       Log.e("uri", uri.toString());
@@ -594,6 +604,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         _iv.setImageBitmap(bmp_save);
         this.bmp_save = bmp_save;
         _btn_map_depot.setVisibility(View.INVISIBLE);
+        captureFlag = true;
       } catch (FileNotFoundException e) {
         Log.e("Exception", e.getMessage(), e);
       }

@@ -74,7 +74,7 @@ import java.util.concurrent.Executor;
 /**
  * Main activity of MediaPipe Hands app.
  */
-public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener {
+public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     // Run the pipeline and the model inference on GPU or CPU.
     private static final boolean RUN_ON_GPU = true;
@@ -253,35 +253,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     //// SETTINGS: GESTURE SELECTION ////
     /////////////////////////////
 
-    @Override
-    public boolean onMenuItemClick(MenuItem item) {
-        Toast.makeText(this, "Selected gesture for shot: " + item.getTitle(), Toast.LENGTH_SHORT).show();
-        switch (item.getItemId()) {
-            case R.id.victory:
-                activationGesture = HandGesture.VICTORY;
-                return true;
-            case R.id.index:
-                activationGesture = HandGesture.INDEX;
-                return true;
-            case R.id.horns:
-                activationGesture = HandGesture.HORNS;
-                return true;
-            case R.id.ok:
-                activationGesture = HandGesture.OK;
-                return true;
-            case R.id.fist:
-                activationGesture = HandGesture.FIST;
-                return true;
-            case R.id.love:
-                activationGesture = HandGesture.LOVE;
-                return true;
-            case R.id.middle:
-                activationGesture = HandGesture.MIDDLE;
-                return true;
-            default:
-                return false;
-        }
-    }
 
     // Unicode emoji to String
     private String getEmoji(int unicode) {

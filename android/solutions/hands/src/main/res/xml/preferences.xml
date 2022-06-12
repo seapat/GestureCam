@@ -21,7 +21,16 @@
         android:title="Gestures"
         />
 
-
+    <androidx.preference.Preference
+        android:selectable="false"
+        android:title=""
+        android:persistent="false"
+        />
+        <Preference
+            android:selectable="false"
+            android:persistent="false"
+            android:layout="@layout/custom_preference"/>
+            />
 </androidx.preference.PreferenceScreen>
 
     <!--        android:initialExpandedChildrenCount="5"-->
